@@ -1,0 +1,27 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Word {
+  id             String   @id @default(uuid())
+  word           String
+  meaning        String
+  correctMeaning String?
+  explanation    String?
+  status         String?
+  createdAt      DateTime @default(now())
+  
+  // SRS (Spaced Repetition System) fields
+  nextReviewDate DateTime @default(now())
+  interval       Int      @default(0)
+  repetition     Int      @default(0)
+  easeFactor     Float    @default(2.5)
+  tags           String?  // Comma separated tags for contextual learning
+}
