@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import ollama from 'ollama';
+import { validateWordMeaning } from '@/lib/word-ai';
 
 export async function GET() {
   try {
@@ -9,54 +9,55 @@ export async function GET() {
         createdAt: 'desc',
       },
     });
+
     return NextResponse.json(words);
   } catch (error) {
     console.error('Error fetching words:', error);
-    return NextResponse.json({ error: 'Failed to fetch words', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch words', details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { word, meaning } = body;
+    const word = typeof body.word === 'string' ? body.word.trim() : '';
+    const meaning = typeof body.meaning === 'string' ? body.meaning.trim() : '';
 
     if (!word || !meaning) {
       return NextResponse.json({ error: 'Word and meaning are required' }, { status: 400 });
     }
 
+    const existingWord = await prisma.word.findFirst({
+      where: {
+        word,
+        meaning,
+      },
+    });
+
+    if (existingWord) {
+      return NextResponse.json(
+        { error: 'This word and meaning already exist', word: existingWord },
+        { status: 409 }
+      );
+    }
+
     let status = 'unverified';
     let correctMeaning = meaning;
-    let explanation = 'Chưa được kiểm tra bằng AI.';
+    let explanation = 'Chua duoc kiem tra bang AI.';
+    let synonyms = '';
 
     try {
-      const prompt = `You are a professional English-Vietnamese lexicographer.
-Evaluate if the Vietnamese meaning provided by the student is correct/accurate for the English word.
-English word: "${word}"
-Student's Vietnamese meaning: "${meaning}"
-
-Respond strictly in JSON format with these keys:
-- "status": string, must be one of "correct" (fully correct), "partially_correct" (close or has other meanings), "incorrect" (wrong meaning)
-- "correctMeaning": string, a clean and standard Vietnamese translation of this word (correct the student's entry if incorrect)
-- "explanation": string, a detailed explanation in Vietnamese (1-2 sentences) about the word, its word class (noun, verb, adj, etc.), collocations, and why the meaning is correct/incorrect. Add 1 English example sentence with its Vietnamese translation at the end.
-
-Strictly return ONLY a raw JSON object.`;
-
-      const response = await ollama.chat({
-        model: 'qwen2.5:3b',
-        messages: [{ role: 'user', content: prompt }],
-        format: 'json',
-      });
-
-      const aiResponse = JSON.parse(response.message.content.trim());
-      if (aiResponse.status && aiResponse.correctMeaning && aiResponse.explanation) {
-        status = aiResponse.status;
-        correctMeaning = aiResponse.correctMeaning;
-        explanation = aiResponse.explanation;
-      }
+      const aiResponse = await validateWordMeaning(word, meaning);
+      status = aiResponse.status;
+      correctMeaning = aiResponse.correctMeaning;
+      explanation = aiResponse.explanation;
+      synonyms = aiResponse.synonyms;
     } catch (aiError) {
       console.error('Failed to validate meaning with Ollama:', aiError);
-      explanation = 'Không thể kết nối với AI để kiểm tra nghĩa.';
+      explanation = 'Khong the ket noi voi AI de kiem tra nghia.';
     }
 
     const newWord = await prisma.word.create({
@@ -66,6 +67,7 @@ Strictly return ONLY a raw JSON object.`;
         status,
         correctMeaning,
         explanation,
+        synonyms,
       },
     });
 

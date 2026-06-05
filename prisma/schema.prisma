@@ -16,6 +16,7 @@ model Word {
   correctMeaning String?
   explanation    String?
   status         String?
+  synonyms       String?
   createdAt      DateTime @default(now())
   
   // SRS (Spaced Repetition System) fields
