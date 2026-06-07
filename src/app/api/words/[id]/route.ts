@@ -1,13 +1,21 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { validateWordMeaning } from '@/lib/word-ai';
+import { verifyToken } from '@/lib/auth';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, { params }: RouteParams) {
   try {
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.split(' ')[1] || '';
+    if (!verifyToken(token)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await request.json();
+    const word = typeof body.word === 'string' ? body.word.trim() : undefined;
     const meaning = typeof body.meaning === 'string' ? body.meaning.trim() : undefined;
     const synonyms = typeof body.synonyms === 'string' ? body.synonyms.trim() : undefined;
     const recheck = body.recheck === true;
@@ -20,14 +28,26 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Word not found' }, { status: 404 });
     }
 
+    const nextWord = word ?? existingWord.word;
     const nextMeaning = meaning ?? existingWord.meaning;
     const updateData: {
+      word?: string;
       meaning?: string;
       synonyms?: string;
       status?: string;
       correctMeaning?: string;
       explanation?: string;
     } = {};
+
+    if (word !== undefined) {
+      if (!word) {
+        return NextResponse.json({ error: 'Word is required' }, { status: 400 });
+      }
+
+      updateData.word = word;
+      updateData.status = 'unverified';
+      updateData.explanation = 'Dang cho AI kiem tra lai.';
+    }
 
     if (meaning !== undefined) {
       if (!meaning) {
@@ -46,7 +66,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
     if (recheck) {
       try {
-        const aiResponse = await validateWordMeaning(existingWord.word, nextMeaning);
+        const aiResponse = await validateWordMeaning(nextWord, nextMeaning);
         updateData.status = aiResponse.status;
         updateData.correctMeaning = aiResponse.correctMeaning;
         updateData.explanation = aiResponse.explanation;
@@ -74,8 +94,14 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(_request: Request, { params }: RouteParams) {
+export async function DELETE(request: Request, { params }: RouteParams) {
   try {
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.split(' ')[1] || '';
+    if (!verifyToken(token)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
 
     await prisma.word.delete({

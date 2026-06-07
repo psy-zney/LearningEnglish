@@ -13,6 +13,7 @@ model Word {
   id             String   @id @default(uuid())
   word           String
   meaning        String
+  correctedWord  String?
   correctMeaning String?
   explanation    String?
   status         String?

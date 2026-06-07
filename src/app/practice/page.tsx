@@ -32,7 +32,8 @@ export default function PracticeArea() {
 
   const fetchWords = async () => {
     try {
-      const res = await fetch("/api/words");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const res = await fetch(`${apiUrl}/api/words`);
       const data = await res.json();
       setWords(data);
     } catch (error) {
@@ -61,9 +62,14 @@ export default function PracticeArea() {
       }
 
       setFlashcardWord(null);
-      const res = await fetch("/api/ai/practice", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const token = localStorage.getItem("admin_token") || "";
+      const res = await fetch(`${apiUrl}/api/ai/practice`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({ mode, words: mode === "focus" ? words : [], exerciseType }),
       });
       const data = await res.json();
@@ -90,9 +96,14 @@ export default function PracticeArea() {
 
     setIsChecking(true);
     try {
-      const res = await fetch("/api/ai/check", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const token = localStorage.getItem("admin_token") || "";
+      const res = await fetch(`${apiUrl}/api/ai/check`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({ question, answer: userAnswer }),
       });
       const data = await res.json();

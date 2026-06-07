@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 import ollama from 'ollama';
+import { verifyToken } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.split(' ')[1] || '';
+    if (!verifyToken(token)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { mode, words, exerciseType = 'translation' } = await request.json();
     
     let prompt = "";

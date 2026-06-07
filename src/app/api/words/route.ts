@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { validateWordMeaning } from '@/lib/word-ai';
+import { verifyToken } from '@/lib/auth';
 
 export async function GET() {
   try {
@@ -22,6 +23,13 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    // Check auth
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.split(' ')[1] || '';
+    if (!verifyToken(token)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const word = typeof body.word === 'string' ? body.word.trim() : '';
     const meaning = typeof body.meaning === 'string' ? body.meaning.trim() : '';
@@ -33,13 +41,12 @@ export async function POST(request: Request) {
     const existingWord = await prisma.word.findFirst({
       where: {
         word,
-        meaning,
       },
     });
 
     if (existingWord) {
       return NextResponse.json(
-        { error: 'This word and meaning already exist', word: existingWord },
+        { error: 'This word already exists', word: existingWord },
         { status: 409 }
       );
     }
