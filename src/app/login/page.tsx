@@ -76,6 +76,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
+            suppressHydrationWarning
             disabled={isLoading || !password}
             className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"
           >

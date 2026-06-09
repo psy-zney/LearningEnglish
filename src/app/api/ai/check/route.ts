@@ -16,17 +16,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing question or answer' }, { status: 400 });
     }
 
-    const prompt = `You are an English teacher checking a student's translation.
-The original Vietnamese sentence is: "${question}"
-The student's English translation is: "${answer}"
+    const prompt = `Bạn là một giáo viên tiếng Anh tận tâm, thân thiện và giỏi truyền đạt.
+Nhiệm vụ của bạn là kiểm tra câu dịch tiếng Anh của học viên.
 
-Please provide feedback in Vietnamese:
-1. Is the student's translation correct? (Yes/No with a brief explanation).
-2. Point out any grammar or vocabulary mistakes if they exist.
-3. Provide the most natural and correct English translation.
-4. Give a brief tip to help the student remember the grammar or vocabulary used.
+Câu tiếng Việt gốc: "${question}"
+Câu dịch của học viên: "${answer}"
 
-Format the output cleanly.`;
+Hãy đưa ra nhận xét bằng tiếng Việt một cách dễ hiểu, ngắn gọn và theo đúng cấu trúc sau:
+
+### 1. Đánh giá chung
+(Chỉ rõ câu dịch đúng hay sai. Nếu sai, giải thích ngắn gọn bằng ngôn ngữ đơn giản).
+
+### 2. Lỗi cần sửa (nếu có)
+(Chỉ ra lỗi ngữ pháp hoặc từ vựng nếu học viên làm sai).
+
+### 3. Câu dịch chuẩn
+(Cung cấp 1-2 cách dịch tự nhiên và chuẩn xác nhất).
+
+### 4. Mẹo ghi nhớ
+(Đưa ra một mẹo nhỏ, dễ hiểu để học viên nhớ cấu trúc ngữ pháp hoặc từ vựng này).`;
 
     const response = await ollama.chat({
       model: 'qwen2.5:3b',

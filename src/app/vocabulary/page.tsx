@@ -80,102 +80,11 @@ const normalizeEnglishInput = (value: string) => {
     .toLowerCase();
 };
 
-const toneMarks: Record<string, Record<string, string>> = {
-  s: { a: "\u00e1", e: "\u00e9", i: "\u00ed", o: "\u00f3", u: "\u00fa", y: "\u00fd", "\u0103": "\u1eaf", "\u00e2": "\u1ea5", "\u00ea": "\u1ebf", "\u00f4": "\u1ed1", "\u01a1": "\u1edb", "\u01b0": "\u1ee9" },
-  f: { a: "\u00e0", e: "\u00e8", i: "\u00ec", o: "\u00f2", u: "\u00f9", y: "\u1ef3", "\u0103": "\u1eb1", "\u00e2": "\u1ea7", "\u00ea": "\u1ec1", "\u00f4": "\u1ed3", "\u01a1": "\u1edd", "\u01b0": "\u1eeb" },
-  r: { a: "\u1ea3", e: "\u1ebb", i: "\u1ec9", o: "\u1ecf", u: "\u1ee7", y: "\u1ef7", "\u0103": "\u1eb3", "\u00e2": "\u1ea9", "\u00ea": "\u1ec3", "\u00f4": "\u1ed5", "\u01a1": "\u1edf", "\u01b0": "\u1eed" },
-  x: { a: "\u00e3", e: "\u1ebd", i: "\u0129", o: "\u00f5", u: "\u0169", y: "\u1ef9", "\u0103": "\u1eb5", "\u00e2": "\u1eab", "\u00ea": "\u1ec5", "\u00f4": "\u1ed7", "\u01a1": "\u1ee1", "\u01b0": "\u1eef" },
-  j: { a: "\u1ea1", e: "\u1eb9", i: "\u1ecb", o: "\u1ecd", u: "\u1ee5", y: "\u1ef5", "\u0103": "\u1eb7", "\u00e2": "\u1ead", "\u00ea": "\u1ec7", "\u00f4": "\u1ed9", "\u01a1": "\u1ee3", "\u01b0": "\u1ef1" },
-};
-
-const toneByCombiningMark: Record<string, string> = {
-  "\u0301": "s",
-  "\u0300": "f",
-  "\u0309": "r",
-  "\u0303": "x",
-  "\u0323": "j",
-};
-
-const toneCombiningMarks = /[\u0300\u0301\u0303\u0309\u0323]/g;
-const vowelPriority = ["\u0103", "\u00e2", "\u00ea", "\u00f4", "\u01a1", "\u01b0", "a", "e", "o", "i", "u", "y"];
-
-const stripToneMarks = (value: string) => value.normalize("NFD").replace(toneCombiningMarks, "").normalize("NFC");
-
-const getExistingToneKey = (value: string) => {
-  for (const char of value.normalize("NFD")) {
-    const toneKey = toneByCombiningMark[char];
-    if (toneKey) return toneKey;
-  }
-
-  return "";
-};
-
-const telexToneKeys = new Set(["s", "f", "r", "x", "j"]);
-const telexVowels = new Set(["a", "e", "i", "o", "u", "y", "\u0103", "\u00e2", "\u00ea", "\u00f4", "\u01a1", "\u01b0"]);
-
-const findExplicitToneKey = (word: string) => {
-  const lowerWord = stripToneMarks(word).toLowerCase();
-
-  for (let index = lowerWord.length - 1; index >= 0; index -= 1) {
-    const char = lowerWord[index];
-    if (!telexToneKeys.has(char)) continue;
-
-    const before = lowerWord.slice(0, index);
-    const after = lowerWord.slice(index + 1);
-    const hasVowelBefore = [...before].some((item) => telexVowels.has(item));
-    const onlyVowelsAfter = [...after].every((item) => telexVowels.has(item));
-
-    if (hasVowelBefore && onlyVowelsAfter) {
-      return { index, toneKey: char };
-    }
-  }
-
-  return { index: -1, toneKey: "" };
-};
-
-const applyTelexToWord = (word: string) => {
-  const explicitTone = findExplicitToneKey(word);
-  const explicitToneKey = explicitTone.toneKey;
-  const existingToneKey = getExistingToneKey(word);
-  const toneKey = explicitToneKey || existingToneKey;
-  const rawWord = explicitToneKey
-    ? `${word.slice(0, explicitTone.index)}${word.slice(explicitTone.index + 1)}`
-    : word;
-  const baseWord = stripToneMarks(rawWord);
-  const withoutToneKey = baseWord
-    .replace(/dd/gi, "\u0111")
-    .replace(/uow/gi, "\u01b0\u01a1")
-    .replace(/uw/gi, "\u01b0")
-    .replace(/ow/gi, "\u01a1")
-    .replace(/aw/gi, "\u0103")
-    .replace(/aa/gi, "\u00e2")
-    .replace(/ee/gi, "\u00ea")
-    .replace(/oo/gi, "\u00f4");
-  if (!toneKey) return withoutToneKey;
-
-  const lowerWord = withoutToneKey.toLowerCase();
-  const targetVowel = lowerWord.includes("ia")
-    ? "i"
-    : vowelPriority.find((vowel) => lowerWord.includes(vowel));
-  if (!targetVowel) return withoutToneKey;
-
-  const index = lowerWord.lastIndexOf(targetVowel);
-  const markedVowel = toneMarks[toneKey]?.[targetVowel];
-  if (!markedVowel) return withoutToneKey;
-
-  return `${withoutToneKey.slice(0, index)}${markedVowel}${withoutToneKey.slice(index + targetVowel.length)}`;
-};
-
-const normalizeVietnameseInput = (value: string) => {
-  return value.replace(/[A-Za-z\u00c0-\u1ef9\u0110\u0111]+/g, applyTelexToWord);
-};
-
 export default function Home() {
   const [words, setWords] = useState<Word[]>([]);
   const [newWord, setNewWord] = useState("");
   const [newMeaning, setNewMeaning] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedWords, setSelectedWords] = useState<Set<string>>(new Set());
   const [expandedWordId, setExpandedWordId] = useState<string | null>(null);
   const [editingWordId, setEditingWordId] = useState<string | null>(null);
@@ -260,7 +169,6 @@ export default function Home() {
 
   const handleAddWord = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return;
 
     const trimmedWord = normalizeEnglishInput(newWord).trim();
     const trimmedMeaning = newMeaning.trim();
@@ -268,13 +176,30 @@ export default function Home() {
     const submittedWord = trimmedWord;
     const submittedMeaning = trimmedMeaning;
 
-    try {
-      setIsSubmitting(true);
-      setFormError(null);
+    setNewWord("");
+    setNewMeaning("");
+    setFormError(null);
 
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const tempWord: Word = {
+      id: tempId,
+      word: submittedWord,
+      meaning: submittedMeaning,
+      status: "unverified",
+      explanation: "Đang chờ AI kiểm tra...",
+      createdAt: new Date().toISOString()
+    };
+
+    setWords((prev) => [tempWord, ...prev]);
+    setRecheckingWordId(tempId);
+
+    try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const token = getAdminToken();
-      if (!token) return;
+      if (!token) {
+        setWords((prev) => prev.filter(w => w.id !== tempId));
+        return;
+      }
 
       const res = await fetch(`${apiUrl}/api/words`, {
         method: "POST",
@@ -287,25 +212,25 @@ export default function Home() {
 
       const data = await res.json().catch(() => null);
 
-      if (res.ok) {
-        setNewWord((current) => (current.trim() === submittedWord ? "" : current));
-        setNewMeaning((current) => (current.trim() === submittedMeaning ? "" : current));
+      if (res.ok && data) {
+        setWords((prev) => prev.map((w) => (w.id === tempId ? data : w)));
         setAuthError(null);
-        await fetchWords();
       } else if (res.status === 401) {
+        setWords((prev) => prev.filter(w => w.id !== tempId));
         handleUnauthorized();
       } else if (res.status === 409) {
         setFormError(data?.error || "This word already exists.");
-        setNewWord((current) => (current.trim() === submittedWord ? "" : current));
-        setNewMeaning((current) => (current.trim() === submittedMeaning ? "" : current));
+        setWords((prev) => prev.filter(w => w.id !== tempId));
       } else {
         setFormError(data?.error || "Failed to add word.");
+        setWords((prev) => prev.filter(w => w.id !== tempId));
       }
     } catch (error) {
       console.error("Failed to add word", error);
       setFormError("Could not add word.");
+      setWords((prev) => prev.filter(w => w.id !== tempId));
     } finally {
-      setIsSubmitting(false);
+      setRecheckingWordId((current) => current === tempId ? null : current);
     }
   };
 
@@ -546,16 +471,16 @@ export default function Home() {
             lang="vi"
             placeholder="Vietnamese meaning"
             value={newMeaning}
-            onChange={(e) => setNewMeaning(normalizeVietnameseInput(e.target.value))}
+            onChange={(e) => setNewMeaning(e.target.value)}
             className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           <button
             type="submit"
-            disabled={hasMounted ? (!newWord.trim() || !newMeaning.trim() || isSubmitting) : undefined}
+            disabled={hasMounted ? (!newWord.trim() || !newMeaning.trim()) : undefined}
             className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2"
           >
-            {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
-            {isSubmitting ? "Checking with AI..." : "Add Word"}
+            <Plus className="w-5 h-5" />
+            Add Word
           </button>
         </form>
         {formError && <p className="mt-3 text-sm text-rose-500">{formError}</p>}

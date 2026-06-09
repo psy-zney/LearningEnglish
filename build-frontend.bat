@@ -6,6 +6,11 @@ if exist src\app\api (
     rename src\app\api _api
 )
 
+REM Clear Next.js cache to avoid type errors with missing api folder
+if exist .next (
+    rmdir /s /q .next
+)
+
 REM Build static export
 set BUILD_TARGET=export
 call npm run build

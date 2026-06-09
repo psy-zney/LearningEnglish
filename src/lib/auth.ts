@@ -3,7 +3,7 @@ import crypto from 'crypto';
 
 // Replace this with the actual SHA-256 hash of the user's password.
 // The default password here is "admin123" (hash: 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918)
-const DEFAULT_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
+const DEFAULT_HASH = "6755a89e0bb9652daa312fc874c4b8034051ace74e5e0d0b5d17220f3c7c1a5c";
 
 export function hashPassword(password: string): string {
   return crypto.createHash('sha256').update(password).digest('hex');
