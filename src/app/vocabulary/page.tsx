@@ -114,7 +114,7 @@ export default function Home() {
 
   async function fetchWords() {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/LearningEnglish";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const res = await fetch(`${apiUrl}/api/words`);
       const data = await res.json();
       if (Array.isArray(data)) {
@@ -198,7 +198,7 @@ export default function Home() {
     setRecheckingWordId(tempId);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/LearningEnglish";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const token = getAdminToken();
       if (!token) {
         setWords((prev) => prev.filter(w => w.id !== tempId));
@@ -240,7 +240,7 @@ export default function Home() {
 
   const handleDeleteWord = async (id: string) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/LearningEnglish";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const token = getAdminToken();
       if (!token) return;
 
@@ -300,7 +300,7 @@ export default function Home() {
     const selectedWordObjects = words.filter((word) => selectedWords.has(word.id));
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/LearningEnglish";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const token = getAdminToken();
       if (!token) return;
 
@@ -334,7 +334,7 @@ export default function Home() {
     try {
       setRecheckingWordId(word.id);
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/LearningEnglish";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const token = getAdminToken();
       if (!token) return;
 
@@ -370,7 +370,7 @@ export default function Home() {
     try {
       setSavingWordId(word.id);
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/LearningEnglish";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const token = getAdminToken();
       if (!token) return;
 
@@ -410,7 +410,7 @@ export default function Home() {
     try {
       setSavingWordId(wordId);
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/LearningEnglish";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const token = getAdminToken();
       if (!token) return;
 

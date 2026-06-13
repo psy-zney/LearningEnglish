@@ -27,7 +27,7 @@ export default function Dashboard() {
     setIsLoading(true);
     setIsError(false);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/LearningEnglish";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
       const res = await fetch(`${apiUrl}/api/dashboard`);
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();

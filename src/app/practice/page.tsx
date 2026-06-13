@@ -53,7 +53,7 @@ export default function PracticeArea() {
 
   const fetchWords = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/LearningEnglish";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const res = await fetch(`${apiUrl}/api/words`);
       const data = await res.json();
       setWords(data);
@@ -153,7 +153,7 @@ export default function PracticeArea() {
       }
 
       setFlashcardWord(null);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/LearningEnglish";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const token = localStorage.getItem("admin_token") || "";
       const res = await fetch(`${apiUrl}/api/ai/practice`, {
         method: "POST",
@@ -187,7 +187,7 @@ export default function PracticeArea() {
 
     setIsChecking(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/LearningEnglish";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const token = localStorage.getItem("admin_token") || "";
       const res = await fetch(`${apiUrl}/api/ai/check`, {
         method: "POST",
