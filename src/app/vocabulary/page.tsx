@@ -543,7 +543,7 @@ export default function Home() {
                 data-reveal
                 className={`group relative p-5 transition-all cursor-pointer flex flex-col justify-between ${
                   isSelected
-                    ? "study-card border-[var(--primary)] bg-[rgba(99,102,241,0.06)] ring-1 ring-[var(--primary)] shadow-md"
+                    ? "study-card border-[var(--primary)] bg-[rgba(255,255,255,0.05)] ring-1 ring-[var(--primary)] shadow-md"
                     : "study-card hover:border-[var(--primary)] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                 }`}
                 onClick={() => toggleWordSelection(word.id)}
@@ -743,7 +743,7 @@ export default function Home() {
                         e.stopPropagation();
                         playPronunciation(word.word);
                       }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold text-[var(--foreground)] bg-[rgba(99,102,241,0.12)] rounded-lg hover:bg-[rgba(99,102,241,0.25)] transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold text-[var(--foreground)] bg-[rgba(255,255,255,0.08)] rounded-lg hover:bg-[rgba(255,255,255,0.15)] transition-colors"
                     >
                       <Volume2 className="w-4 h-4" />
                       Pronounce

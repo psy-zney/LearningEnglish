@@ -218,7 +218,7 @@ export default function PracticeArea() {
 
       <div data-reveal className="study-panel p-5 md:p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="grid size-11 place-items-center rounded-xl bg-[rgba(99,102,241,0.12)] text-[var(--primary)] ring-1 ring-[var(--primary)]/20">
+          <div className="grid size-11 place-items-center rounded-xl bg-[rgba(255,255,255,0.08)] text-[var(--foreground)] ring-1 ring-[var(--primary)]/20">
             <BrainCircuit className="w-6 h-6" />
           </div>
           <h2 className="text-xl font-bold">Daily exercise</h2>
@@ -231,7 +231,7 @@ export default function PracticeArea() {
               onClick={() => setExerciseType("translation")}
               className={`flex-shrink-0 flex items-center gap-2 py-2 px-4 rounded-xl font-medium transition-all border ${
                 exerciseType === "translation"
-                  ? "border-[var(--primary)] bg-[rgba(99,102,241,0.12)] text-[var(--foreground)] ring-1 ring-[var(--primary)]/30"
+                  ? "border-[var(--primary)] bg-[rgba(255,255,255,0.08)] text-[var(--foreground)] ring-1 ring-[var(--primary)]/20"
                   : "border-[var(--border)] text-[var(--muted)] hover:bg-[var(--panel-soft)]"
               }`}
             >
@@ -241,7 +241,7 @@ export default function PracticeArea() {
               onClick={() => setExerciseType("cloze")}
               className={`flex-shrink-0 flex items-center gap-2 py-2 px-4 rounded-xl font-medium transition-all border ${
                 exerciseType === "cloze"
-                  ? "border-[var(--primary)] bg-[rgba(99,102,241,0.12)] text-[var(--foreground)] ring-1 ring-[var(--primary)]/30"
+                  ? "border-[var(--primary)] bg-[rgba(255,255,255,0.08)] text-[var(--foreground)] ring-1 ring-[var(--primary)]/20"
                   : "border-[var(--border)] text-[var(--muted)] hover:bg-[var(--panel-soft)]"
               }`}
             >
@@ -251,7 +251,7 @@ export default function PracticeArea() {
               onClick={() => setExerciseType("flashcard")}
               className={`flex-shrink-0 flex items-center gap-2 py-2 px-4 rounded-xl font-medium transition-all border ${
                 exerciseType === "flashcard"
-                  ? "border-[var(--primary)] bg-[rgba(99,102,241,0.12)] text-[var(--foreground)] ring-1 ring-[var(--primary)]/30"
+                  ? "border-[var(--primary)] bg-[rgba(255,255,255,0.08)] text-[var(--foreground)] ring-1 ring-[var(--primary)]/20"
                   : "border-[var(--border)] text-[var(--muted)] hover:bg-[var(--panel-soft)]"
               }`}
             >

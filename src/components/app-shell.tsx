@@ -43,7 +43,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   href={href}
                   className={`flex min-w-fit items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold md:px-4 md:py-3 transition-all ${
                     isActive
-                      ? "bg-[rgba(99,102,241,0.12)] text-[var(--foreground)] ring-1 ring-[var(--primary)]/35"
+                      ? "bg-[rgba(255,255,255,0.08)] text-[var(--foreground)] ring-1 ring-[var(--primary)]/20"
                       : "text-[var(--muted)] hover:bg-[var(--panel-soft)] hover:text-[var(--foreground)]"
                   }`}
                 >

@@ -129,7 +129,7 @@ export default function Dashboard() {
       <section data-reveal className="study-panel grid gap-4 p-5 md:grid-cols-[1.3fr_0.8fr] shadow-md">
         <div className="flex flex-col justify-between gap-6">
           <div>
-            <div className="mb-4 grid size-11 place-items-center rounded-xl bg-[rgba(99,102,241,0.12)] text-[var(--primary)] ring-1 ring-[var(--primary)]/20">
+            <div className="mb-4 grid size-11 place-items-center rounded-xl bg-[rgba(255,255,255,0.08)] text-[var(--foreground)] ring-1 ring-[var(--primary)]/20">
               <Target className="size-5" />
             </div>
             <p className="text-sm font-bold uppercase tracking-wide text-[var(--muted-2)]">Due for review</p>
