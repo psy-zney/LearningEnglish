@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { CheckCircle2, Loader2, RefreshCw, Sparkles, BrainCircuit, Type, FileText } from "lucide-react";
 import { useSoftReveal } from "@/lib/use-soft-reveal";
+import gsap from "gsap";
 
 type Word = {
   id: string;
@@ -13,6 +14,8 @@ type Word = {
 
 export default function PracticeArea() {
   const pageRef = useSoftReveal<HTMLDivElement>();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const feedbackRef = useRef<HTMLDivElement>(null);
   const [words, setWords] = useState<Word[]>([]);
   const [mode, setMode] = useState<"focus" | "free">("focus");
   const [exerciseType, setExerciseType] = useState<"translation" | "cloze" | "flashcard">("translation");
@@ -28,6 +31,26 @@ export default function PracticeArea() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
 
+  const handleMouseEnterCard = () => {
+    if (!cardRef.current) return;
+    gsap.to(cardRef.current, {
+      scale: 1.03,
+      rotateX: 4,
+      duration: 0.3,
+      ease: "power2.out",
+    });
+  };
+
+  const handleMouseLeaveCard = () => {
+    if (!cardRef.current) return;
+    gsap.to(cardRef.current, {
+      scale: 1,
+      rotateX: 0,
+      duration: 0.3,
+      ease: "power2.out",
+    });
+  };
+
   const fetchWords = async () => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
@@ -42,6 +65,72 @@ export default function PracticeArea() {
   useEffect(() => {
     fetchWords();
   }, []);
+
+  useEffect(() => {
+    if (!cardRef.current) return;
+    if (isFlipped) {
+      gsap.to(cardRef.current, {
+        rotateY: 180,
+        duration: 0.6,
+        ease: "back.out(1.2)",
+      });
+    } else {
+      gsap.to(cardRef.current, {
+        rotateY: 0,
+        duration: 0.6,
+        ease: "back.out(1.2)",
+      });
+    }
+  }, [isFlipped]);
+
+  useEffect(() => {
+    if (!feedback || !feedbackRef.current) return;
+    
+    // Clear any previous animations
+    gsap.killTweensOf(feedbackRef.current);
+    
+    const isCorrect = feedback.includes("✅") || feedback.includes("Chính xác") || feedback.includes("correct") || !feedback.includes("❌");
+    
+    if (isCorrect) {
+      gsap.fromTo(feedbackRef.current, 
+        { autoAlpha: 0, y: 20, scale: 0.98 },
+        { 
+          autoAlpha: 1, 
+          y: 0, 
+          scale: 1, 
+          duration: 0.4, 
+          ease: "back.out(1.3)",
+          onComplete: () => {
+            gsap.to(feedbackRef.current, {
+              boxShadow: "0 0 16px rgba(16, 185, 129, 0.35)",
+              borderColor: "var(--success)",
+              yoyo: true,
+              repeat: 1,
+              duration: 0.35,
+            });
+          }
+        }
+      );
+    } else {
+      gsap.fromTo(feedbackRef.current, 
+        { autoAlpha: 0, y: 20 },
+        { 
+          autoAlpha: 1, 
+          y: 0, 
+          duration: 0.35, 
+          ease: "power2.out",
+          onComplete: () => {
+            const tl = gsap.timeline();
+            tl.to(feedbackRef.current, { x: -6, duration: 0.05, ease: "none" })
+              .to(feedbackRef.current, { x: 6, duration: 0.05, ease: "none" })
+              .to(feedbackRef.current, { x: -4, duration: 0.05, ease: "none" })
+              .to(feedbackRef.current, { x: 4, duration: 0.05, ease: "none" })
+              .to(feedbackRef.current, { x: 0, duration: 0.05, ease: "none" });
+          }
+        }
+      );
+    }
+  }, [feedback]);
 
   const generateQuestion = async () => {
     setIsGenerating(true);
@@ -129,7 +218,7 @@ export default function PracticeArea() {
 
       <div data-reveal className="study-panel p-5 md:p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="grid size-11 place-items-center rounded-xl bg-[rgba(176,106,74,0.18)] text-[var(--primary-hover)]">
+          <div className="grid size-11 place-items-center rounded-xl bg-[rgba(99,102,241,0.12)] text-[var(--primary)] ring-1 ring-[var(--primary)]/20">
             <BrainCircuit className="w-6 h-6" />
           </div>
           <h2 className="text-xl font-bold">Daily exercise</h2>
@@ -142,7 +231,7 @@ export default function PracticeArea() {
               onClick={() => setExerciseType("translation")}
               className={`flex-shrink-0 flex items-center gap-2 py-2 px-4 rounded-xl font-medium transition-all border ${
                 exerciseType === "translation"
-                  ? "border-[var(--primary)] bg-[rgba(176,106,74,0.16)] text-[var(--foreground)]"
+                  ? "border-[var(--primary)] bg-[rgba(99,102,241,0.12)] text-[var(--foreground)] ring-1 ring-[var(--primary)]/30"
                   : "border-[var(--border)] text-[var(--muted)] hover:bg-[var(--panel-soft)]"
               }`}
             >
@@ -152,7 +241,7 @@ export default function PracticeArea() {
               onClick={() => setExerciseType("cloze")}
               className={`flex-shrink-0 flex items-center gap-2 py-2 px-4 rounded-xl font-medium transition-all border ${
                 exerciseType === "cloze"
-                  ? "border-[var(--primary)] bg-[rgba(176,106,74,0.16)] text-[var(--foreground)]"
+                  ? "border-[var(--primary)] bg-[rgba(99,102,241,0.12)] text-[var(--foreground)] ring-1 ring-[var(--primary)]/30"
                   : "border-[var(--border)] text-[var(--muted)] hover:bg-[var(--panel-soft)]"
               }`}
             >
@@ -162,7 +251,7 @@ export default function PracticeArea() {
               onClick={() => setExerciseType("flashcard")}
               className={`flex-shrink-0 flex items-center gap-2 py-2 px-4 rounded-xl font-medium transition-all border ${
                 exerciseType === "flashcard"
-                  ? "border-[var(--primary)] bg-[rgba(176,106,74,0.16)] text-[var(--foreground)]"
+                  ? "border-[var(--primary)] bg-[rgba(99,102,241,0.12)] text-[var(--foreground)] ring-1 ring-[var(--primary)]/30"
                   : "border-[var(--border)] text-[var(--muted)] hover:bg-[var(--panel-soft)]"
               }`}
             >
@@ -215,15 +304,18 @@ export default function PracticeArea() {
       {question && exerciseType === "flashcard" && flashcardWord && (
         <div data-reveal className="flex flex-col items-center gap-8 perspective-1000">
           <div 
+            ref={cardRef}
             onClick={() => setIsFlipped(!isFlipped)}
-            className={`relative h-80 w-full max-w-md cursor-pointer preserve-3d transition-transform duration-500 ${isFlipped ? "rotate-y-180" : ""}`}
+            onMouseEnter={handleMouseEnterCard}
+            onMouseLeave={handleMouseLeaveCard}
+            className="relative h-80 w-full max-w-md cursor-pointer preserve-3d"
             style={{ transformStyle: 'preserve-3d' }}
           >
             {/* Front */}
             <div className="study-panel absolute flex h-full w-full backface-hidden flex-col items-center justify-center gap-4 p-8">
               <span className="text-sm font-bold uppercase tracking-wide text-[var(--muted-2)]">Meaning?</span>
-              <h2 className="text-center text-4xl font-extrabold">{flashcardWord.word}</h2>
-              <p className="mt-4 text-sm text-[var(--primary-hover)]">Click to flip</p>
+              <h2 className="text-center text-4xl font-extrabold text-[var(--foreground)]">{flashcardWord.word}</h2>
+              <p className="mt-4 text-sm text-[var(--primary)] animate-pulse">Click to flip</p>
             </div>
             
             {/* Back */}
@@ -246,13 +338,13 @@ export default function PracticeArea() {
       {question && exerciseType !== "flashcard" && (
         <div data-reveal className="study-panel p-5 md:p-6">
           <div className="mb-6">
-            <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-[var(--primary-hover)]">
+            <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-[var(--primary)]">
               {exerciseType === "translation" ? "Translate to English:" : "Fill in the blank:"}
             </h3>
             <p className="text-2xl font-semibold leading-snug">{question}</p>
             {targetWords.length > 0 && exerciseType === "translation" && (
               <p className="text-sm text-gray-500 mt-2">
-                Try to use: <span className="font-semibold text-[var(--primary-hover)]">{targetWords.join(", ")}</span>
+                Try to use: <span className="font-semibold text-[var(--primary)]">{targetWords.join(", ")}</span>
               </p>
             )}
           </div>
@@ -277,7 +369,7 @@ export default function PracticeArea() {
       )}
 
       {feedback && (
-        <div data-reveal className="study-panel p-5 md:p-6">
+        <div ref={feedbackRef} data-reveal className="study-panel p-5 md:p-6 border border-[var(--border)]">
           <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-[var(--success)]">
             <Sparkles className="w-5 h-5" />
             AI Feedback

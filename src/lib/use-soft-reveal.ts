@@ -25,10 +25,10 @@ export function useSoftReveal<T extends HTMLElement>() {
 
           gsap.from("[data-reveal]", {
             autoAlpha: 0,
-            y: 10,
-            duration: 0.22,
-            ease: "power2.out",
-            stagger: 0.035,
+            y: 16,
+            duration: 0.45,
+            ease: "expo.out",
+            stagger: 0.045,
             clearProps: "visibility,transform,opacity",
           });
         },

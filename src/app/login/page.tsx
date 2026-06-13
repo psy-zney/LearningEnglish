@@ -40,37 +40,37 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-zinc-800 w-full max-w-md">
+      <div className="study-panel p-8 w-full max-w-md">
         <div className="flex justify-center mb-6">
-          <div className="p-4 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl text-indigo-600 dark:text-indigo-400">
+          <div className="p-4 bg-[rgba(99,102,241,0.12)] rounded-2xl text-[var(--primary)] ring-1 ring-[var(--primary)]/30">
             <Lock className="w-8 h-8" />
           </div>
         </div>
         
-        <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-2">
+        <h1 className="text-2xl font-bold text-center text-[var(--foreground)] mb-2">
           Đăng nhập hệ thống
         </h1>
-        <p className="text-center text-gray-500 dark:text-gray-400 mb-8">
+        <p className="text-center text-[var(--muted)] mb-8">
           Vui lòng nhập mật khẩu quản trị viên để tiếp tục
         </p>
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-[var(--muted)] mb-2">
               Mật khẩu
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow"
+              className="study-input"
               placeholder="Nhập mật khẩu..."
               required
             />
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 text-sm bg-rose-50 dark:bg-rose-900/20 p-3 rounded-xl">
+            <div className="flex items-center gap-2 text-[var(--danger)] text-sm bg-[rgba(239,68,68,0.1)] p-3 rounded-xl border border-[var(--danger)]/20">
               <AlertCircle className="w-4 h-4" />
               {error}
             </div>
@@ -80,7 +80,7 @@ export default function LoginPage() {
             type="submit"
             suppressHydrationWarning
             disabled={isLoading || !password}
-            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"
+            className="btn-primary w-full py-3 disabled:opacity-50"
           >
             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
             Đăng nhập

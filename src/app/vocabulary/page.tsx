@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { useSoftReveal } from "@/lib/use-soft-reveal";
+import gsap from "gsap";
 
 type Word = {
   id: string;
@@ -35,11 +36,11 @@ type Word = {
 const getStatusBadgeStyle = (status: string) => {
   switch (status) {
     case "correct":
-      return "text-[var(--success)] border-[var(--success)] bg-[rgba(94,106,67,0.15)]";
+      return "text-[var(--success)] border-[var(--success)] bg-[rgba(16,185,129,0.10)]";
     case "partially_correct":
-      return "text-[var(--warning)] border-[var(--warning)] bg-[rgba(217,161,79,0.15)]";
+      return "text-[var(--warning)] border-[var(--warning)] bg-[rgba(245,158,11,0.10)]";
     case "incorrect":
-      return "text-[var(--danger)] border-[var(--danger)] bg-[rgba(181,90,75,0.15)]";
+      return "text-[var(--danger)] border-[var(--danger)] bg-[rgba(239,68,68,0.10)]";
     default:
       return "text-[var(--muted-2)] border-[var(--border)] bg-[var(--surface)]";
   }
@@ -530,11 +531,20 @@ export default function Home() {
             return (
               <div
                 key={word.id}
+                id={word.id}
+                ref={(node) => {
+                  if (node && word.id.startsWith("temp-")) {
+                    gsap.fromTo(node,
+                      { scale: 0.8, opacity: 0, y: -20 },
+                      { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.2)" }
+                    );
+                  }
+                }}
                 data-reveal
                 className={`group relative p-5 transition-all cursor-pointer flex flex-col justify-between ${
                   isSelected
-                    ? "study-card border-[var(--primary)] bg-[rgba(176,106,74,0.1)] ring-1 ring-[var(--primary)] shadow-md"
-                    : "study-card hover:border-[var(--primary-hover)] hover:shadow-md"
+                    ? "study-card border-[var(--primary)] bg-[rgba(99,102,241,0.06)] ring-1 ring-[var(--primary)] shadow-md"
+                    : "study-card hover:border-[var(--primary)] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                 }`}
                 onClick={() => toggleWordSelection(word.id)}
               >
@@ -545,7 +555,7 @@ export default function Home() {
                       e.stopPropagation();
                       void handleDeleteWord(word.id);
                     }}
-                    className="p-2 bg-[var(--surface)] rounded-lg hover:bg-[rgba(181,90,75,0.15)]"
+                    className="p-2 bg-[var(--surface)] rounded-lg hover:bg-[rgba(239,68,68,0.12)] hover:text-[var(--danger)] border border-[var(--border)] transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -584,6 +594,14 @@ export default function Home() {
                 <div>
                   {isExpanded && (
                     <div
+                      ref={(node) => {
+                        if (node) {
+                          gsap.fromTo(node,
+                            { height: 0, opacity: 0, overflow: 'hidden' },
+                            { height: 'auto', opacity: 1, duration: 0.3, ease: 'power2.out', clearProps: 'overflow' }
+                          );
+                        }
+                      }}
                       className="mt-2 mb-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] text-sm flex flex-col gap-3"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -725,7 +743,7 @@ export default function Home() {
                         e.stopPropagation();
                         playPronunciation(word.word);
                       }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold text-[var(--foreground)] bg-[rgba(176,106,74,0.18)] rounded-lg hover:bg-[rgba(176,106,74,0.3)] transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold text-[var(--foreground)] bg-[rgba(99,102,241,0.12)] rounded-lg hover:bg-[rgba(99,102,241,0.25)] transition-colors"
                     >
                       <Volume2 className="w-4 h-4" />
                       Pronounce

@@ -1,21 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #1f1a17;
-  --foreground: #f3eadf;
-  --surface: #251f1b;
-  --panel: #2c2521;
-  --panel-soft: #332b26;
-  --border: #463d36;
-  --muted: #c8b59f;
-  --muted-2: #978777;
-  --primary: #b06a4a;
-  --primary-hover: #c07a4a;
-  --success: #5e6a43;
-  --warning: #d9a14f;
-  --danger: #b55a4b;
-  --ring: rgba(217, 196, 166, 0.24);
-  --shadow-low: 0 1px 2px rgba(0, 0, 0, 0.22), 0 10px 24px rgba(0, 0, 0, 0.16);
+  --background: #0b0f19;
+  --foreground: #f8fafc;
+  --surface: #111524;
+  --panel: #161c30;
+  --panel-soft: #202742;
+  --border: #2b3658;
+  --muted: #94a3b8;
+  --muted-2: #64748b;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --ring: rgba(99, 102, 241, 0.3);
+  --shadow-low: 0 4px 12px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 @theme inline {
@@ -33,7 +33,7 @@ body {
 }
 
 ::selection {
-  background: rgba(176, 106, 74, 0.45);
+  background: rgba(99, 102, 241, 0.35);
   color: var(--foreground);
 }
 
@@ -87,7 +87,7 @@ textarea:focus-visible {
 
 .study-input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(176, 106, 74, 0.18);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.20);
   outline: none;
 }
 
