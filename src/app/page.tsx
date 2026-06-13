@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, BrainCircuit, Target, Flame, ChevronRight, Sparkles, AlertCircle, RefreshCw } from "lucide-react";
-import { useState, useEffect } from "react";
+import { AlertCircle, BookOpen, BrainCircuit, ChevronRight, Flame, RefreshCw, Target } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useSoftReveal } from "@/lib/use-soft-reveal";
 
 export default function Dashboard() {
+  const pageRef = useSoftReveal<HTMLDivElement>();
   const [stats, setStats] = useState({
     totalWords: 0,
     wordsToReview: 0,
@@ -15,14 +17,14 @@ export default function Dashboard() {
   const [isError, setIsError] = useState(false);
 
   useEffect(() => {
-    fetchStats();
+    void fetchStats();
   }, []);
 
   const fetchStats = async () => {
     setIsLoading(true);
     setIsError(false);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
       const res = await fetch(`${apiUrl}/api/dashboard`);
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
@@ -42,18 +44,14 @@ export default function Dashboard() {
 
   if (isError) {
     return (
-      <div className="p-8 max-w-6xl mx-auto flex flex-col gap-8 items-center justify-center min-h-[70vh]">
-        <div className="bg-rose-50 dark:bg-rose-950/30 p-8 rounded-3xl border border-rose-100 dark:border-rose-900 shadow-sm text-center max-w-md">
-          <AlertCircle className="w-16 h-16 text-rose-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-rose-700 dark:text-rose-400 mb-2">Backend không chạy</h1>
-          <p className="text-rose-600 dark:text-rose-300 mb-6">
-            Không thể kết nối với cơ sở dữ liệu và AI cục bộ. Vui lòng kiểm tra lại backend.
-          </p>
-          <button 
-            onClick={fetchStats}
-            className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-6 py-3 rounded-xl font-bold transition-colors"
-          >
-            <RefreshCw className="w-5 h-5" /> Thử lại
+      <div ref={pageRef} className="study-page flex min-h-[70vh] items-center justify-center">
+        <div data-reveal className="study-panel max-w-md p-6 text-center">
+          <AlertCircle className="mx-auto mb-4 size-11 text-[var(--danger)]" />
+          <h1 className="text-2xl font-bold">Backend is offline</h1>
+          <p className="muted mt-2">Cannot connect to the database or local AI service.</p>
+          <button onClick={fetchStats} className="btn-primary mt-5">
+            <RefreshCw className="size-4" />
+            Try again
           </button>
         </div>
       </div>
@@ -62,104 +60,76 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="p-8 max-w-6xl mx-auto flex items-center justify-center min-h-[70vh]">
-        <RefreshCw className="w-10 h-10 text-indigo-500 animate-spin" />
+      <div className="study-page flex min-h-[70vh] items-center justify-center">
+        <div className="study-panel flex items-center gap-3 px-5 py-4 text-[var(--muted)]">
+          <RefreshCw className="size-5 animate-spin text-[var(--primary)]" />
+          Loading study plan
+        </div>
       </div>
     );
   }
 
+  const progress = stats.totalWords > 0 ? Math.round((stats.masteredWords / stats.totalWords) * 100) : 0;
+
   return (
-    <div className="p-8 max-w-6xl mx-auto flex flex-col gap-8">
-      <div className="flex items-center justify-between">
+    <div ref={pageRef} className="study-page space-y-5">
+      <section data-reveal className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Welcome back! 👋
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-2 text-lg">
-            Ready to expand your vocabulary today?
+          <p className="text-sm font-bold uppercase tracking-wide text-[var(--primary-hover)]">Today</p>
+          <h1 className="mt-1 text-3xl font-extrabold leading-tight md:text-4xl">Daily English study</h1>
+          <p className="muted mt-2 max-w-2xl">
+            Review due words first, then add new vocabulary when your list is clear.
           </p>
         </div>
-        <div className="flex items-center gap-3 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 px-5 py-3 rounded-2xl border border-orange-100 dark:border-orange-500/20 shadow-sm">
-          <Flame className="w-6 h-6 fill-orange-500" />
+        <div className="study-card flex w-fit items-center gap-3 px-4 py-3">
+          <Flame className="size-5 text-[var(--primary-hover)]" />
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider opacity-80">Current Streak</p>
-            <p className="text-xl font-bold leading-none">3 Days</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-[var(--muted-2)]">Streak</p>
+            <p className="font-bold">3 days</p>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Hero Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-8 rounded-3xl text-white shadow-lg relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-6 opacity-20 transform group-hover:scale-110 transition-transform duration-500">
-            <Target className="w-32 h-32" />
-          </div>
-          <div className="relative z-10">
-            <h3 className="text-indigo-100 font-medium mb-2 text-lg">Due for Review</h3>
-            <p className="text-6xl font-bold mb-6">{stats.wordsToReview}</p>
-            <Link 
-              href="/practice" 
-              className="inline-flex items-center gap-2 bg-white text-indigo-600 px-6 py-3 rounded-xl font-bold hover:bg-indigo-50 transition-colors shadow-sm"
-            >
-              Start Review Session
-              <ChevronRight className="w-5 h-5" />
-            </Link>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
+      <section data-reveal className="study-panel grid gap-4 p-5 md:grid-cols-[1.3fr_0.8fr]">
+        <div className="flex flex-col justify-between gap-6">
           <div>
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl w-fit mb-4">
-              <BookOpen className="w-6 h-6" />
+            <div className="mb-4 grid size-11 place-items-center rounded-xl bg-[rgba(176,106,74,0.18)] text-[var(--primary-hover)]">
+              <Target className="size-5" />
             </div>
-            <h3 className="text-gray-500 dark:text-gray-400 font-medium mb-1">Total Vocabulary</h3>
-            <p className="text-4xl font-bold text-gray-900 dark:text-white">{stats.totalWords}</p>
+            <p className="text-sm font-bold uppercase tracking-wide text-[var(--muted-2)]">Due for review</p>
+            <p className="mt-2 text-6xl font-extrabold leading-none">{stats.wordsToReview}</p>
           </div>
-          <div className="mt-6 pt-6 border-t border-gray-100 dark:border-zinc-800">
-            <Link 
-              href="/vocabulary" 
-              className="text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center gap-1"
-            >
-              Manage Words <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-2xl w-fit mb-4">
-              <BrainCircuit className="w-6 h-6" />
-            </div>
-            <h3 className="text-gray-500 dark:text-gray-400 font-medium mb-1">Mastered Words</h3>
-            <p className="text-4xl font-bold text-gray-900 dark:text-white">{stats.masteredWords}</p>
-            <p className="text-sm text-gray-400 mt-2">{stats.learningWords} still learning</p>
-          </div>
-          <div className="mt-6 pt-6 border-t border-gray-100 dark:border-zinc-800 w-full bg-gray-100 dark:bg-zinc-800 rounded-full h-2 overflow-hidden">
-            <div 
-              className="bg-emerald-500 h-full rounded-full" 
-              style={{ width: `${stats.totalWords > 0 ? (stats.masteredWords / stats.totalWords) * 100 : 0}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Suggested Actions */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-          <Sparkles className="w-6 h-6 text-indigo-500" />
-          Recommended for you
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Link href="/practice" className="group bg-gradient-to-br from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-800/50 p-6 rounded-3xl border border-gray-200 dark:border-zinc-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all shadow-sm hover:shadow-md">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Practice with AI</h3>
-            <p className="text-gray-600 dark:text-gray-400">Generate dynamic sentences or play Flashcards to strengthen your memory using Active Recall.</p>
-          </Link>
-          <Link href="/vocabulary" className="group bg-gradient-to-br from-gray-50 to-white dark:from-zinc-900 dark:to-zinc-800/50 p-6 rounded-3xl border border-gray-200 dark:border-zinc-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all shadow-sm hover:shadow-md">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Add New Vocabulary</h3>
-            <p className="text-gray-600 dark:text-gray-400">Encountered a new word today? Add it to your collection and let the SRS system schedule your reviews.</p>
+          <Link href="/practice" className="btn-primary w-full md:w-fit">
+            Start practice
+            <ChevronRight className="size-4" />
           </Link>
         </div>
-      </div>
+
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
+          <p className="text-sm font-bold uppercase tracking-wide text-[var(--muted-2)]">Mastery</p>
+          <div className="mt-4 flex items-end justify-between gap-3">
+            <p className="text-4xl font-extrabold">{progress}%</p>
+            <p className="muted text-sm">{stats.masteredWords} mastered</p>
+          </div>
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--panel-soft)]">
+            <div className="h-full rounded-full bg-[var(--success)]" style={{ width: `${progress}%` }} />
+          </div>
+          <p className="muted mt-4 text-sm">{stats.learningWords} words still learning.</p>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <Link data-reveal href="/vocabulary" className="study-card p-5 hover:border-[var(--primary)]">
+          <BookOpen className="mb-4 size-6 text-[var(--primary-hover)]" />
+          <h2 className="text-xl font-bold">Add and clean up words</h2>
+          <p className="muted mt-2">Save English words with Vietnamese meanings, pronunciation, and AI checks.</p>
+        </Link>
+        <Link data-reveal href="/practice" className="study-card p-5 hover:border-[var(--primary)]">
+          <BrainCircuit className="mb-4 size-6 text-[var(--success)]" />
+          <h2 className="text-xl font-bold">Practice active recall</h2>
+          <p className="muted mt-2">Use translation, cloze, and flashcards for fast daily study sessions.</p>
+        </Link>
+      </section>
     </div>
   );
 }

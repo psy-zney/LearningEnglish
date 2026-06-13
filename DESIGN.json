@@ -1,0 +1,230 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-13T00:00:00Z",
+  "title": "Design System: AI English Learning",
+  "extensions": {
+    "colorMeta": {
+      "autumn-ink": {
+        "role": "neutral",
+        "displayName": "Autumn Ink",
+        "canonical": "#1f1a17",
+        "tonalRamp": ["#0f0d0b", "#1b1613", "#27211d", "#342d28", "#463d36", "#5a4e45", "#76675b", "#9a8877"]
+      },
+      "autumn-forest": {
+        "role": "neutral",
+        "displayName": "Autumn Forest",
+        "canonical": "#2f3428",
+        "tonalRamp": ["#171a14", "#23261d", "#303427", "#3d4332", "#4c5440", "#637055", "#7d8a6c", "#9ca686"]
+      },
+      "autumn-moss": {
+        "role": "secondary",
+        "displayName": "Autumn Moss",
+        "canonical": "#5e6a43",
+        "tonalRamp": ["#2a3020", "#363d29", "#444c33", "#545e3f", "#65704b", "#79875b", "#93a16f", "#afbc88"]
+      },
+      "autumn-clay": {
+        "role": "secondary",
+        "displayName": "Autumn Clay",
+        "canonical": "#8b5e46",
+        "tonalRamp": ["#3b281f", "#4b3328", "#5c3f32", "#6f4c3d", "#845949", "#9a6856", "#b17b68", "#c79687"]
+      },
+      "autumn-umber": {
+        "role": "primary",
+        "displayName": "Autumn Umber",
+        "canonical": "#b06a4a",
+        "tonalRamp": ["#4a2d20", "#5d3928", "#714430", "#875039", "#9e5d42", "#b86d4d", "#cd8362", "#dfa287"]
+      },
+      "autumn-rust": {
+        "role": "primary",
+        "displayName": "Autumn Rust",
+        "canonical": "#c07a4a",
+        "tonalRamp": ["#4f311b", "#633d22", "#784929", "#8f562f", "#a76436", "#bf7440", "#d68857", "#e5a074"]
+      },
+      "autumn-sand": {
+        "role": "neutral",
+        "displayName": "Autumn Sand",
+        "canonical": "#d9c4a6",
+        "tonalRamp": ["#4a3b2a", "#5b4a35", "#6d5940", "#81684b", "#96855e", "#ad9c73", "#c5b58a", "#ded1aa"]
+      },
+      "autumn-cream": {
+        "role": "neutral",
+        "displayName": "Autumn Cream",
+        "canonical": "#f3eadf",
+        "tonalRamp": ["#3a3028", "#4e4237", "#635448", "#7a6858", "#93816a", "#ae9b81", "#c9b59c", "#e6d6c2"]
+      },
+      "autumn-slate": {
+        "role": "neutral",
+        "displayName": "Autumn Slate",
+        "canonical": "#3a332e",
+        "tonalRamp": ["#181411", "#24201c", "#302a25", "#3d3630", "#4c443d", "#5e554c", "#73685f", "#8d8075"]
+      },
+      "autumn-surface": {
+        "role": "neutral",
+        "displayName": "Autumn Surface",
+        "canonical": "#251f1b",
+        "tonalRamp": ["#120f0d", "#1c1714", "#271f1a", "#332a24", "#403630", "#51453d", "#685a50", "#847467"]
+      },
+      "autumn-panel": {
+        "role": "neutral",
+        "displayName": "Autumn Panel",
+        "canonical": "#2c2521",
+        "tonalRamp": ["#161210", "#201b18", "#2c2521", "#38302b", "#453c36", "#564b44", "#6d6057", "#88786c"]
+      },
+      "autumn-border": {
+        "role": "neutral",
+        "displayName": "Autumn Border",
+        "canonical": "#463d36",
+        "tonalRamp": ["#1d1815", "#2b2420", "#39312b", "#48403a", "#594f47", "#6d6258", "#83756a", "#9d8c7f"]
+      },
+      "autumn-text": {
+        "role": "neutral",
+        "displayName": "Autumn Text",
+        "canonical": "#f3eadf",
+        "tonalRamp": ["#3a3028", "#4e4237", "#635448", "#7a6858", "#93816a", "#ae9b81", "#c9b59c", "#e6d6c2"]
+      },
+      "autumn-text-muted": {
+        "role": "neutral",
+        "displayName": "Autumn Text Muted",
+        "canonical": "#c8b59f",
+        "tonalRamp": ["#3f3226", "#504032", "#62503e", "#75604a", "#8a7158", "#a08668", "#b69c79", "#ceb08d"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Primary landing and dashboard hero titles."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headers and major screen titles."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card and panel headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Primary explanatory copy."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Metadata, status pills, and form labels."
+      }
+    },
+    "shadows": [
+      {
+        "name": "ambient-low",
+        "value": "0 1px 2px rgba(0,0,0,0.24), 0 8px 24px rgba(0,0,0,0.18)",
+        "purpose": "Default card lift and hover response."
+      },
+      {
+        "name": "ambient-medium",
+        "value": "0 2px 6px rgba(0,0,0,0.26), 0 16px 32px rgba(0,0,0,0.2)",
+        "purpose": "Active panels and focused content blocks."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Default easing for state transitions."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action for review, add, and login flows.",
+      "html": "<button class=\"ds-btn-primary\">Start review</button>",
+      "css": ".ds-btn-primary { background: #b06a4a; color: #f3eadf; padding: 12px 18px; border: 0; border-radius: 14px; font: 600 1rem/1.2 Inter, Segoe UI, Arial, sans-serif; transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1), transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 1px 2px rgba(0,0,0,0.24), 0 8px 24px rgba(0,0,0,0.18); } .ds-btn-primary:hover { background: #c07a4a; transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 2px solid #d9c4a6; outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary actions that should stay quiet.",
+      "html": "<button class=\"ds-btn-ghost\">Cancel</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: #f3eadf; padding: 10px 14px; border: 1px solid #463d36; border-radius: 14px; font: 600 0.8125rem/1.2 Inter, Segoe UI, Arial, sans-serif; transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1), border-color 180ms cubic-bezier(0.16, 1, 0.3, 1), color 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-ghost:hover { background: #2c2521; border-color: #5e6a43; } .ds-btn-ghost:focus-visible { outline: 2px solid #d9c4a6; outline-offset: 2px; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Text entry for words, meanings, and practice answers.",
+      "html": "<input class=\"ds-input\" placeholder=\"Type here\" />",
+      "css": ".ds-input { background: #251f1b; color: #f3eadf; padding: 12px 14px; border: 1px solid #463d36; border-radius: 14px; font: 400 1rem/1.6 Inter, Segoe UI, Arial, sans-serif; transition: border-color 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-input::placeholder { color: #c8b59f; } .ds-input:focus-visible { outline: none; border-color: #b06a4a; box-shadow: 0 0 0 3px rgba(176,106,74,0.18); }"
+    },
+    {
+      "name": "Card Surface",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "Primary content container for dashboard tiles and practice panels.",
+      "html": "<section class=\"ds-card\"><h3>Title</h3><p>Content</p></section>",
+      "css": ".ds-card { background: #2c2521; color: #f3eadf; padding: 24px; border: 1px solid #463d36; border-radius: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.24), 0 8px 24px rgba(0,0,0,0.18); }"
+    },
+    {
+      "name": "Sidebar Navigation",
+      "kind": "nav",
+      "refersTo": "card-surface",
+      "description": "Desktop navigation with icon plus label and restrained state change.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item is-active\" href=\"#\">Dashboard</a></nav>",
+      "css": ".ds-nav { background: #2c2521; color: #f3eadf; padding: 16px; border-right: 1px solid #463d36; } .ds-nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; color: #c8b59f; text-decoration: none; transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1), color 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-nav-item:hover { background: #3a332e; color: #f3eadf; } .ds-nav-item.is-active { background: #3d2f26; color: #f3eadf; }"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "refersTo": "card-surface",
+      "description": "Small state marker for correctness and review status.",
+      "html": "<span class=\"ds-pill\">Due for review</span>",
+      "css": ".ds-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: rgba(176,106,74,0.16); color: #f3eadf; border: 1px solid rgba(217,196,166,0.2); font: 600 0.8125rem/1.2 Inter, Segoe UI, Arial, sans-serif; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Study Cabin",
+    "overview": "The interface should feel like a quiet workspace at dusk, warm, contained, and focused on the learner’s next useful action. It is intentionally minimal and low-noise so the vocabulary list, review loop, and AI help stay readable and calm.\n\nThe visual language avoids spectacle. Surfaces are warm and grounded, hierarchy is strong, and the AI layer stays supportive rather than dominant. The system rejects generic SaaS chrome, noisy neon AI styling, school-like worksheets, and toy flashcard visuals.",
+    "keyCharacteristics": [
+      "Warm and grounded, not bright or clinical.",
+      "Minimal, focused, and low-noise.",
+      "Clear hierarchy for review, practice, and correction.",
+      "Calm AI assistance, never visually dominant."
+    ],
+    "rules": [
+      {
+        "name": "The Warm-Contrast Rule",
+        "body": "Use warm neutrals for almost everything, and reserve accent colors for real actions, status, or progress.",
+        "section": "colors"
+      },
+      {
+        "name": "The Scan-First Rule",
+        "body": "Headlines should be brief and informative, body copy should be short enough to skim, and labels should clarify state without repeating the obvious.",
+        "section": "typography"
+      },
+      {
+        "name": "The Surface-First Rule",
+        "body": "A surface should read correctly even without shadow. Shadows refine depth, they do not define it.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep most surfaces in warm dark neutrals, using cream text for readability.",
+      "Do use umber, rust, and moss only where they clarify action or progress.",
+      "Do preserve a compact, focused layout with clear hierarchy and low visual noise.",
+      "Do make review, add-word, and practice actions easy to find without scanning the whole page."
+    ],
+    "donts": [
+      "Don't make the UI look like a generic SaaS dashboard with empty hero stats.",
+      "Don't lean into noisy neon AI branding.",
+      "Don't use school-like worksheets that feel punitive.",
+      "Don't make it feel like a toy flashcard app, a corporate admin panel, or a consumer social feed.",
+      "Don't overwhelm the surface with bright gradients, high-saturation accents, or decorative chrome."
+    ]
+  }
+}

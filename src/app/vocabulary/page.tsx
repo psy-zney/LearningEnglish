@@ -18,6 +18,7 @@ import {
   Volume2,
   X,
 } from "lucide-react";
+import { useSoftReveal } from "@/lib/use-soft-reveal";
 
 type Word = {
   id: string;
@@ -34,13 +35,13 @@ type Word = {
 const getStatusBadgeStyle = (status: string) => {
   switch (status) {
     case "correct":
-      return "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50";
+      return "text-[var(--success)] border-[var(--success)] bg-[rgba(94,106,67,0.15)]";
     case "partially_correct":
-      return "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/50";
+      return "text-[var(--warning)] border-[var(--warning)] bg-[rgba(217,161,79,0.15)]";
     case "incorrect":
-      return "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50";
+      return "text-[var(--danger)] border-[var(--danger)] bg-[rgba(181,90,75,0.15)]";
     default:
-      return "bg-gray-50 text-gray-600 border-gray-100 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700";
+      return "text-[var(--muted-2)] border-[var(--border)] bg-[var(--surface)]";
   }
 };
 
@@ -60,13 +61,13 @@ const getStatusLabel = (status: string) => {
 const getStatusIcon = (status: string) => {
   switch (status) {
     case "correct":
-      return <CheckCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />;
+      return <CheckCircle className="w-3 h-3" />;
     case "partially_correct":
-      return <AlertCircle className="w-3 h-3 text-amber-600 dark:text-amber-400" />;
+      return <AlertCircle className="w-3 h-3" />;
     case "incorrect":
-      return <AlertCircle className="w-3 h-3 text-rose-600 dark:text-rose-400" />;
+      return <AlertCircle className="w-3 h-3" />;
     default:
-      return <HelpCircle className="w-3 h-3 text-gray-500 dark:text-gray-400" />;
+      return <HelpCircle className="w-3 h-3" />;
   }
 };
 
@@ -82,6 +83,7 @@ const normalizeEnglishInput = (value: string) => {
 };
 
 export default function Home() {
+  const pageRef = useSoftReveal<HTMLDivElement>();
   const [words, setWords] = useState<Word[]>([]);
   const [newWord, setNewWord] = useState("");
   const [newMeaning, setNewMeaning] = useState("");
@@ -442,12 +444,12 @@ export default function Home() {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto flex flex-col gap-8">
-      <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800">
+    <div ref={pageRef} className="study-page flex flex-col gap-8">
+      <section data-reveal className="study-panel p-5 md:p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-zinc-100">Add New Vocabulary</h2>
+          <h2 className="text-2xl font-bold">Add New Vocabulary</h2>
           {!isAdmin && (
-            <Link href="/login" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">Đăng nhập để thêm từ</Link>
+            <Link href="/login" className="text-sm font-bold text-[var(--primary)] hover:text-[var(--primary-hover)]">Đăng nhập để thêm từ</Link>
           )}
         </div>
         <form onSubmit={handleAddWord} className="flex flex-col md:flex-row gap-4">
@@ -462,7 +464,7 @@ export default function Home() {
             value={newWord}
             onChange={(e) => setNewWord(e.target.value)}
             onBlur={() => setNewWord((current) => normalizeEnglishInput(current).trim())}
-            className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="study-input flex-1"
           />
           <input
             type="text"
@@ -473,48 +475,48 @@ export default function Home() {
             placeholder="Vietnamese meaning"
             value={newMeaning}
             onChange={(e) => setNewMeaning(e.target.value)}
-            className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="study-input flex-1"
           />
           <button
             type="submit"
             disabled={hasMounted ? (!newWord.trim() || !newMeaning.trim()) : undefined}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2"
+            className="btn-primary disabled:opacity-50"
           >
             <Plus className="w-5 h-5" />
             Add Word
           </button>
         </form>
-        {formError && <p className="mt-3 text-sm text-rose-500">{formError}</p>}
-      </div>
+        {formError && <p className="mt-3 text-sm text-[var(--danger)]">{formError}</p>}
+      </section>
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-zinc-100">Your Vocabulary ({words.length})</h2>
+      <div data-reveal className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Your Vocabulary ({words.length})</h2>
         {isAdmin && selectedWords.size > 0 && (
           <button
             onClick={handleGenerateSentences}
             disabled={aiLoading}
-            className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-medium shadow-md transition-all flex items-center gap-2"
+            className="btn-primary"
           >
             {aiLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
             Generate Sentences ({selectedWords.size})
           </button>
         )}
       </div>
-      {authError && <p className="text-sm font-medium text-rose-500">{authError}</p>}
+      {authError && <p className="text-sm font-bold text-[var(--danger)]">{authError}</p>}
 
       {aiResponse && (
-        <div className="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 p-6 rounded-2xl">
-          <h3 className="text-lg font-bold text-indigo-800 dark:text-indigo-300 mb-4 flex items-center gap-2">
+        <section data-reveal className="study-panel p-5 md:p-6 border-[var(--primary)]">
+          <h3 className="text-lg font-bold text-[var(--primary-hover)] mb-4 flex items-center gap-2">
             <Sparkles className="w-5 h-5" />
             AI Generated Examples
           </h3>
-          <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap">{aiResponse}</div>
-        </div>
+          <div className="prose prose-invert max-w-none whitespace-pre-wrap">{aiResponse}</div>
+        </section>
       )}
 
       {isLoading ? (
         <div className="flex justify-center p-12">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+          <Loader2 className="w-8 h-8 animate-spin text-[var(--primary)]" />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -528,21 +530,22 @@ export default function Home() {
             return (
               <div
                 key={word.id}
-                className={`group relative p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                data-reveal
+                className={`group relative p-5 transition-all cursor-pointer flex flex-col justify-between ${
                   isSelected
-                    ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/20 shadow-md ring-1 ring-indigo-500"
-                    : "border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-800"
+                    ? "study-card border-[var(--primary)] bg-[rgba(176,106,74,0.1)] ring-1 ring-[var(--primary)] shadow-md"
+                    : "study-card hover:border-[var(--primary-hover)] hover:shadow-md"
                 }`}
                 onClick={() => toggleWordSelection(word.id)}
               >
                 {isAdmin && (
-                <div className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                <div className="absolute top-4 right-4 text-[var(--muted)] hover:text-[var(--danger)] transition-colors opacity-0 group-hover:opacity-100">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       void handleDeleteWord(word.id);
                     }}
-                    className="p-2 bg-gray-100 dark:bg-zinc-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30"
+                    className="p-2 bg-[var(--surface)] rounded-lg hover:bg-[rgba(181,90,75,0.15)]"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -552,11 +555,11 @@ export default function Home() {
                 <div>
                   <div className="flex items-start justify-between mb-3 pr-8">
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? "bg-indigo-600 border-indigo-600 text-white" : "border-gray-300 dark:border-zinc-700 text-transparent"}`}>
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? "bg-[var(--primary)] border-[var(--primary)] text-[var(--foreground)]" : "border-[var(--border)] text-transparent"}`}>
                         <CheckSquare className="w-3.5 h-3.5" />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-zinc-100">{word.word}</h3>
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusBadgeStyle(word.status || "unverified")}`}>
+                      <h3 className="text-xl font-bold text-[var(--foreground)]">{word.word}</h3>
+                      <span className={`status-pill ${getStatusBadgeStyle(word.status || "unverified")}`}>
                         {getStatusIcon(word.status || "unverified")}
                         {getStatusLabel(word.status || "unverified")}
                       </span>
@@ -565,14 +568,14 @@ export default function Home() {
 
                   <div className="ml-8 mb-4 space-y-3">
                     <div>
-                      <p className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-0.5">Your meaning</p>
-                      <p className="text-gray-700 dark:text-zinc-300 text-lg font-medium leading-tight">{word.meaning}</p>
+                      <p className="text-xs font-bold uppercase tracking-wide text-[var(--muted-2)] mb-0.5">Your meaning</p>
+                      <p className="text-lg font-medium leading-tight text-[var(--foreground)]">{word.meaning}</p>
                     </div>
 
                     {!!word.synonyms && !isEditing && (
                       <div>
-                      <p className="text-xs font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-0.5">English synonyms</p>
-                      <p className="text-sm text-gray-600 dark:text-zinc-400">{word.synonyms}</p>
+                      <p className="text-xs font-bold uppercase tracking-wide text-[var(--muted-2)] mb-0.5">English synonyms</p>
+                      <p className="text-sm text-[var(--muted)]">{word.synonyms}</p>
                     </div>
                   )}
                   </div>
@@ -581,14 +584,14 @@ export default function Home() {
                 <div>
                   {isExpanded && (
                     <div
-                      className="mt-2 mb-4 p-4 rounded-xl border border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-950/40 text-sm flex flex-col gap-3"
+                      className="mt-2 mb-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] text-sm flex flex-col gap-3"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {word.correctedWord && word.correctedWord.toLowerCase() !== word.word.toLowerCase() && !isEditing && (
                         <div>
-                          <p className="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-1">Correct spelling</p>
+                          <p className="text-xs font-bold uppercase tracking-wide text-[var(--muted-2)] mb-1">Correct spelling</p>
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-emerald-600 dark:text-emerald-400 font-bold text-base">{word.correctedWord}</p>
+                            <p className="text-[var(--success)] font-bold text-base">{word.correctedWord}</p>
                             {isAdmin && (
                               <button
                                 onClick={() => void handleApplyCorrectedWord(word)}
@@ -604,9 +607,9 @@ export default function Home() {
 
                       {word.correctMeaning && word.correctMeaning !== word.meaning && !isEditing && (
                         <div>
-                          <p className="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-1">Suggested correct meaning</p>
+                          <p className="text-xs font-bold uppercase tracking-wide text-[var(--muted-2)] mb-1">Suggested correct meaning</p>
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-indigo-600 dark:text-indigo-400 font-bold text-base">{word.correctMeaning}</p>
+                            <p className="text-[var(--primary)] font-bold text-base">{word.correctMeaning}</p>
                             {isAdmin && (
                               <button
                                 onClick={() => startEditing({ ...word, meaning: word.correctMeaning || word.meaning })}
@@ -622,8 +625,8 @@ export default function Home() {
                       {!isEditing ? (
                         <>
                           <div>
-                            <p className="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-1">AI explanation</p>
-                            <p className="text-gray-600 dark:text-zinc-400 whitespace-pre-wrap leading-relaxed font-normal">
+                            <p className="text-xs font-bold uppercase tracking-wide text-[var(--muted-2)] mb-1">AI explanation</p>
+                            <p className="text-[var(--muted)] whitespace-pre-wrap leading-relaxed font-normal">
                               {word.explanation || "No AI explanation yet."}
                             </p>
                           </div>
@@ -632,7 +635,7 @@ export default function Home() {
                             <div className="flex flex-wrap gap-2">
                               <button
                                 onClick={() => startEditing(word)}
-                                className="inline-flex items-center gap-2 px-3 py-2 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-950/50"
+                                className="btn-quiet text-xs py-1.5 px-3"
                               >
                                 <Pencil className="w-4 h-4" />
                                 Edit meaning
@@ -640,7 +643,7 @@ export default function Home() {
                               <button
                                 onClick={() => void handleRecheckWord(word)}
                                 disabled={isBusy}
-                                className="inline-flex items-center gap-2 px-3 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-950/50 disabled:opacity-60"
+                                className="btn-quiet text-xs py-1.5 px-3 disabled:opacity-60"
                               >
                                 {recheckingWordId === word.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCw className="w-4 h-4" />}
                                 Recheck by AI
@@ -651,25 +654,25 @@ export default function Home() {
                       ) : (
                         <div className="flex flex-col gap-3">
                           <div>
-                            <label className="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-1 block">
+                            <label className="text-xs font-bold uppercase tracking-wide text-[var(--muted-2)] mb-1 block">
                               Edit meaning
                             </label>
                             <input
                               value={editMeaning}
                               onChange={(e) => setEditMeaning(e.target.value)}
-                              className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              className="study-input"
                             />
                           </div>
 
                           <div>
-                            <label className="text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-1 block">
+                            <label className="text-xs font-bold uppercase tracking-wide text-[var(--muted-2)] mb-1 block">
                               English synonyms
                             </label>
                             <input
                               value={editSynonyms}
                               onChange={(e) => setEditSynonyms(e.target.value)}
                               placeholder="leave, quit, give up"
-                              className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              className="study-input"
                             />
                           </div>
 
@@ -677,7 +680,7 @@ export default function Home() {
                             <button
                               onClick={() => void handleSaveEdit(word.id)}
                               disabled={!editMeaning.trim() || isBusy}
-                              className="inline-flex items-center gap-2 px-3 py-2 text-xs font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60"
+                              className="btn-primary text-xs py-1.5 px-3"
                             >
                               {savingWordId === word.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                               Save and recheck
@@ -685,7 +688,7 @@ export default function Home() {
                             <button
                               onClick={stopEditing}
                               disabled={isBusy}
-                              className="inline-flex items-center gap-2 px-3 py-2 text-xs font-bold text-gray-600 dark:text-zinc-300 bg-gray-100 dark:bg-zinc-800 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-700"
+                              className="btn-quiet text-xs py-1.5 px-3"
                             >
                               <X className="w-4 h-4" />
                               Cancel
@@ -696,13 +699,13 @@ export default function Home() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-zinc-800/50">
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--border)]">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setExpandedWordId(isExpanded ? null : word.id);
                       }}
-                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-all"
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-[var(--muted)] hover:text-[var(--primary)] rounded-lg hover:bg-[var(--panel-soft)] transition-all"
                     >
                       {isExpanded ? (
                         <>
@@ -722,7 +725,7 @@ export default function Home() {
                         e.stopPropagation();
                         playPronunciation(word.word);
                       }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold text-[var(--foreground)] bg-[rgba(176,106,74,0.18)] rounded-lg hover:bg-[rgba(176,106,74,0.3)] transition-colors"
                     >
                       <Volume2 className="w-4 h-4" />
                       Pronounce
