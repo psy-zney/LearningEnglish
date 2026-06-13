@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   AlertCircle,
   CheckCircle,
@@ -446,7 +447,7 @@ export default function Home() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-zinc-100">Add New Vocabulary</h2>
           {!isAdmin && (
-            <a href="/login" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">Đăng nhập để thêm từ</a>
+            <Link href="/login" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">Đăng nhập để thêm từ</Link>
           )}
         </div>
         <form onSubmit={handleAddWord} className="flex flex-col md:flex-row gap-4">

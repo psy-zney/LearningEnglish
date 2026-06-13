@@ -15,6 +15,9 @@ REM Build static export
 set BUILD_TARGET=export
 call npm run build
 
+REM Add .nojekyll to prevent GitHub Pages from ignoring _next folder
+echo. > out\.nojekyll
+
 REM Restore API directory
 if exist src\app\_api (
     rename src\app\_api api

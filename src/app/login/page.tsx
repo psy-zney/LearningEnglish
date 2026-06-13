@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { Lock, Loader2, LogIn, AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -25,7 +27,7 @@ export default function LoginPage() {
 
       if (res.ok && data.token) {
         localStorage.setItem("admin_token", data.token);
-        window.location.href = "/";
+        router.push("/");
       } else {
         setError(data.error || "Mật khẩu không đúng.");
       }
