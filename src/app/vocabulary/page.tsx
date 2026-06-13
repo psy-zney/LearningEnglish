@@ -104,7 +104,7 @@ export default function Home() {
   const [aiResponse, setAiResponse] = useState<string | null>(null);
 
   useEffect(() => {
-    setHasMounted(true);
+    setTimeout(() => setHasMounted(true), 0);
 
     if (typeof window !== 'undefined') {
       setIsAdmin(!!localStorage.getItem("admin_token"));

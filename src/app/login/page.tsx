@@ -31,7 +31,7 @@ export default function LoginPage() {
       } else {
         setError(data.error || "Mật khẩu không đúng.");
       }
-    } catch (err) {
+    } catch {
       setError("Không thể kết nối đến máy chủ.");
     } finally {
       setIsLoading(false);

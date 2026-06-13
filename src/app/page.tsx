@@ -16,10 +16,6 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
-  useEffect(() => {
-    void fetchStats();
-  }, []);
-
   const fetchStats = async () => {
     setIsLoading(true);
     setIsError(false);
@@ -41,6 +37,10 @@ export default function Dashboard() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    void fetchStats();
+  }, []);
 
   if (isError) {
     return (

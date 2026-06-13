@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PenTool, CheckCircle2, Loader2, RefreshCw, Sparkles, BrainCircuit, Type, FileText } from "lucide-react";
+import { CheckCircle2, Loader2, RefreshCw, Sparkles, BrainCircuit, Type, FileText } from "lucide-react";
 import { useSoftReveal } from "@/lib/use-soft-reveal";
 
 type Word = {
@@ -28,10 +28,6 @@ export default function PracticeArea() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
 
-  useEffect(() => {
-    fetchWords();
-  }, []);
-
   const fetchWords = async () => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
@@ -42,6 +38,10 @@ export default function PracticeArea() {
       console.error("Failed to fetch words", error);
     }
   };
+
+  useEffect(() => {
+    fetchWords();
+  }, []);
 
   const generateQuestion = async () => {
     setIsGenerating(true);

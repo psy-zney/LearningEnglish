@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No words provided' }, { status: 400 });
     }
 
-    const wordList = words.map((w: any) => `${w.word} (${w.meaning})`).join(', ');
+    const wordList = words.map((w: { word: string; meaning: string }) => `${w.word} (${w.meaning})`).join(', ');
 
     const prompt = `
 You are an English teacher. The user has selected the following vocabulary word(s): ${wordList}.
