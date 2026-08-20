@@ -1,12 +1,20 @@
 import { BookOpenCheck, Layers3 } from "lucide-react";
 import Link from "next/link";
+import { BackendUnavailable } from "@/components/backend-unavailable";
 import { LearnSession } from "@/components/learn/learn-session";
-import { getNewContent } from "@/services/content-service";
+import type { ContentListResponse, ContentView } from "@/domain/api-contracts";
+import { apiRequest } from "@/lib/api-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function LearnPage() {
-  const items = await getNewContent(6);
+  let items: ContentView[];
+  try {
+    ({ items } = await apiRequest<ContentListResponse>("/api/learn/content?limit=6"));
+  } catch (error) {
+    console.error("Learn backend request failed:", error);
+    return <BackendUnavailable title="Chưa tải được phiên Learn" retryHref="/learn" />;
+  }
 
   return (
     <div className="study-page space-y-6">

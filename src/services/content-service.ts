@@ -1,25 +1,7 @@
 import "server-only";
 
 import prisma from "@/lib/prisma";
-
-export type ContentView = {
-  id: string;
-  sourceKey: string;
-  kind: string;
-  title: string;
-  meaningVi: string;
-  topic: string | null;
-  toeicParts: number[];
-  cefr: string | null;
-  priority: number;
-  detail: Record<string, unknown>;
-  review: {
-    stage: string;
-    nextReviewAt: string;
-    interval: number;
-    repetition: number;
-  } | null;
-};
+import type { ContentView } from "@/domain/api-contracts";
 
 function safeJson(value: string) {
   try {

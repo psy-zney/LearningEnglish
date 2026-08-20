@@ -3,7 +3,8 @@
 import { ArrowRight, Check, Loader2, RotateCcw, Volume2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { ContentView } from "@/services/content-service";
+import type { ContentView } from "@/domain/api-contracts";
+import { apiRequest } from "@/lib/api-client";
 import { isAcceptedAnswer } from "@/lib/answer-normalizer";
 
 type Phase = "pattern" | "recall" | "summary";
@@ -42,6 +43,7 @@ export function LearnSession({ items }: { items: ContentView[] }) {
   const [checked, setChecked] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const current = items[index];
   const example = current ? getExample(current) : { en: "", vi: "" };
 
@@ -73,15 +75,17 @@ export function LearnSession({ items }: { items: ContentView[] }) {
 
   async function finish() {
     setIsSaving(true);
-    const response = await fetch("/api/learn/complete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contentItemIds: items.map((item) => item.id) }),
-    });
-    if (response.ok) {
+    setSaveError("");
+    try {
+      await apiRequest("/api/learn/complete", {
+        method: "POST",
+        body: JSON.stringify({ contentItemIds: items.map((item) => item.id) }),
+      });
       router.push("/review");
       router.refresh();
       return;
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Không thể hoàn tất phiên học.");
     }
     setIsSaving(false);
   }
@@ -106,6 +110,7 @@ export function LearnSession({ items }: { items: ContentView[] }) {
           {isSaving ? <Loader2 className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
           Đưa vào Review ngay
         </button>
+        {saveError && <p className="mt-3 text-sm text-[var(--danger)]">{saveError}</p>}
       </section>
     );
   }

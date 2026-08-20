@@ -1,41 +1,41 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server.js';
+import type { NextRequest } from 'next/server.js';
+import { isOriginAllowed, parseAllowedOrigins, setVaryOrigin } from './lib/cors-policy.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
 
 export function proxy(request: NextRequest) {
-  const origin = request.headers.get('origin');
-  const configuredOrigins = (process.env.ALLOWED_ORIGINS || '')
-    .split(',')
-    .map((value) => value.trim())
-    .filter(Boolean);
-  const allowedOrigins = new Set([request.nextUrl.origin, ...configuredOrigins]);
-
-  if (origin && !allowedOrigins.has(origin)) {
-    return NextResponse.json({ error: 'Origin is not allowed' }, { status: 403 });
+  if (process.env.APP_DEPLOYMENT_MODE !== 'backend') {
+    return NextResponse.json({ error: 'API is served by the LearningEnglish backend.' }, { status: 404 });
   }
 
-  // Handle preflight OPTIONS requests
-  if (request.method === 'OPTIONS') {
-    const response = new NextResponse(null, {
-      status: 204,
-      headers: {
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Credentials': 'true',
-      },
-    });
-    if (origin) response.headers.set('Access-Control-Allow-Origin', origin);
+  const origin = request.headers.get('origin');
+  const configuredOrigins = parseAllowedOrigins(process.env.ALLOWED_ORIGINS);
+
+  if (!isOriginAllowed(origin, request.nextUrl.origin, configuredOrigins)) {
+    const response = NextResponse.json({ error: 'Origin is not allowed' }, { status: 403 });
+    setVaryOrigin(response.headers);
     return response;
   }
 
-  // Handle actual requests
+  if (request.method === 'OPTIONS') {
+    const response = new NextResponse(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
+    if (origin) response.headers.set('Access-Control-Allow-Origin', origin);
+    setVaryOrigin(response.headers);
+    return response;
+  }
+
   const response = NextResponse.next();
-  
-  // Set CORS headers for the actual response
   if (origin) {
     response.headers.set('Access-Control-Allow-Origin', origin);
-    response.headers.set('Access-Control-Allow-Credentials', 'true');
-    response.headers.set('Vary', 'Origin');
   }
+  setVaryOrigin(response.headers);
 
   return response;
 }

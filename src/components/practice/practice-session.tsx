@@ -3,7 +3,8 @@
 import { ArrowRight, Check, Clock3, Loader2, Target, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import type { PracticeExerciseView } from "@/services/practice-service";
+import type { PracticeExerciseView } from "@/domain/api-contracts";
+import { apiRequest } from "@/lib/api-client";
 
 type AnswerFeedback = {
   correct: boolean;
@@ -29,18 +30,18 @@ export function PracticeSession({ exercises }: { exercises: PracticeExerciseView
     if (!selected || feedback) return;
     setIsChecking(true);
     setError("");
-    const response = await fetch("/api/practice/answer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        exerciseId: current.id,
-        selectedOptionId: selected,
-        responseTimeMs: Date.now() - startedAt,
-      }),
-    });
-    const data = await response.json().catch(() => null);
-    if (!response.ok) {
-      setError(data?.error ?? "Không thể chấm câu trả lời.");
+    let data: AnswerFeedback;
+    try {
+      data = await apiRequest<AnswerFeedback>("/api/practice/answer", {
+        method: "POST",
+        body: JSON.stringify({
+          exerciseId: current.id,
+          selectedOptionId: selected,
+          responseTimeMs: Date.now() - startedAt,
+        }),
+      });
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Không thể chấm câu trả lời.");
       setIsChecking(false);
       return;
     }

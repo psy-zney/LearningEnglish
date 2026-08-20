@@ -6,7 +6,7 @@ echo ===================================================
 echo.
 echo Make sure Ollama is running for AI features to work.
 echo.
-echo Starting Next.js API Server on http://localhost:3000
+echo Starting Next.js API Server on http://localhost:1002
 echo Do not close this window while using the app!
 echo.
 call npm run dev

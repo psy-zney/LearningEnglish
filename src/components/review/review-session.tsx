@@ -4,8 +4,9 @@ import { ArrowRight, Check, Clock3, Loader2, Volume2, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { isAcceptedAnswer } from "@/lib/answer-normalizer";
+import { apiRequest } from "@/lib/api-client";
 import type { ReviewRating } from "@/lib/srs";
-import type { ContentView } from "@/services/content-service";
+import type { ContentView } from "@/domain/api-contracts";
 
 type QueueItem = { reviewStateId: string; content: ContentView };
 
@@ -53,14 +54,13 @@ export function ReviewSession({ queue }: { queue: QueueItem[] }) {
   async function rate(rating: ReviewRating) {
     setIsSaving(true);
     setError("");
-    const response = await fetch("/api/review/rate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contentItemId: current.content.id, rating, answer }),
-    });
-    if (!response.ok) {
-      const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Không thể lưu lượt ôn.");
+    try {
+      await apiRequest("/api/review/rate", {
+        method: "POST",
+        body: JSON.stringify({ contentItemId: current.content.id, rating, answer }),
+      });
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Không thể lưu lượt ôn.");
       setIsSaving(false);
       return;
     }

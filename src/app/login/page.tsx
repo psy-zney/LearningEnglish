@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Lock, Loader2, LogIn, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { apiRequest } from "@/lib/api-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,23 +17,18 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const res = await fetch(`${apiUrl}/api/auth/login`, {
+      const data = await apiRequest<{ token?: string }>("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
-
-      const data = await res.json();
-
-      if (res.ok && data.token) {
+      if (data.token) {
         localStorage.setItem("admin_token", data.token);
         router.push("/");
       } else {
-        setError(data.error || "Mật khẩu không đúng.");
+        setError("Mật khẩu không đúng.");
       }
-    } catch {
-      setError("Không thể kết nối đến máy chủ.");
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Không thể kết nối đến máy chủ.");
     } finally {
       setIsLoading(false);
     }

@@ -3,14 +3,7 @@ import "server-only";
 import prisma from "@/lib/prisma";
 import { toLocalDateKey } from "@/lib/date-key";
 import type { ExerciseOption } from "@/domain/exercise";
-
-export type PracticeExerciseView = {
-  id: string;
-  part: number;
-  prompt: string;
-  options: ExerciseOption[];
-  difficulty: number;
-};
+import type { PracticeExerciseView } from "@/domain/api-contracts";
 
 export async function getPracticeExercises(limit = 10): Promise<PracticeExerciseView[]> {
   const exercises = await prisma.exercise.findMany({

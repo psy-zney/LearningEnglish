@@ -1,11 +1,19 @@
 import { Library } from "lucide-react";
+import { BackendUnavailable } from "@/components/backend-unavailable";
 import { LibraryExplorer } from "@/components/library/library-explorer";
-import { getLibraryContent } from "@/services/content-service";
+import type { ContentListResponse, ContentView } from "@/domain/api-contracts";
+import { apiRequest } from "@/lib/api-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function LibraryPage() {
-  const items = await getLibraryContent();
+  let items: ContentView[];
+  try {
+    ({ items } = await apiRequest<ContentListResponse>("/api/library"));
+  } catch (error) {
+    console.error("Library backend request failed:", error);
+    return <BackendUnavailable title="Chưa tải được Library" retryHref="/library" />;
+  }
 
   return (
     <div className="study-page space-y-6">

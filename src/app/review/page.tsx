@@ -1,12 +1,20 @@
 import { Inbox, RotateCcw } from "lucide-react";
 import Link from "next/link";
+import { BackendUnavailable } from "@/components/backend-unavailable";
 import { ReviewSession } from "@/components/review/review-session";
-import { getDueReviewQueue } from "@/services/review-service";
+import type { ReviewQueueItem, ReviewQueueResponse } from "@/domain/api-contracts";
+import { apiRequest } from "@/lib/api-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReviewPage() {
-  const queue = await getDueReviewQueue(30);
+  let queue: ReviewQueueItem[];
+  try {
+    ({ items: queue } = await apiRequest<ReviewQueueResponse>("/api/review/queue"));
+  } catch (error) {
+    console.error("Review backend request failed:", error);
+    return <BackendUnavailable title="Chưa tải được hàng đợi Review" retryHref="/review" />;
+  }
 
   return (
     <div className="study-page space-y-6">

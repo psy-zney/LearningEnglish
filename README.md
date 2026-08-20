@@ -24,9 +24,38 @@ npm run data:seed
 npm run dev
 ```
 
-Open <http://localhost:3000>.
+Open <http://localhost:1002>.
 
 The recommended mode is local-only and single-user. Learning, review, Part 5 grading, and progress do not require login or Ollama. `/login` remains only for editing legacy vocabulary records.
+
+## Production split
+
+The production deployment uses one codebase with two runtime roles:
+
+- `https://study.zney295.id.vn` runs on Vercel in `frontend` mode. Pages call the backend over HTTP and Vercel does not serve `/api`.
+- `https://learning.zney295.id.vn` points through Cloudflare Tunnel to the Windows host in `backend` mode. Prisma, SQLite, Ollama, SRS, attempts, and progress stay on that host.
+
+Vercel Production and Preview variable:
+
+```text
+NEXT_PUBLIC_API_URL=https://learning.zney295.id.vn
+```
+
+Do not set `APP_DEPLOYMENT_MODE=backend` on Vercel. When the variable is omitted,
+the proxy fails closed and Vercel returns `404` for `/api/*`.
+
+Windows backend variables:
+
+```text
+APP_DEPLOYMENT_MODE=backend
+NEXT_PUBLIC_API_URL=http://127.0.0.1:1002
+DATABASE_URL=file:dev.db
+ALLOWED_ORIGINS=https://study.zney295.id.vn,http://localhost:1002,http://localhost:3000
+OLLAMA_MODEL=qwen3.5:4b
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+```
+
+`NEXT_PUBLIC_API_URL` must not end with `/`. Never expose `DATABASE_URL`, admin credentials, tokens, or the Ollama URL through a `NEXT_PUBLIC_*` variable.
 
 ## Data commands
 
@@ -51,6 +80,18 @@ npm run data:validate
 npm run lint
 npm run typecheck
 npm run build
+npm run test:unit
+npm run test:coverage
+npm run verify:frontend-boundary
+```
+
+For a frontend-boundary production build in PowerShell:
+
+```powershell
+$env:APP_DEPLOYMENT_MODE = 'frontend'
+$env:NEXT_PUBLIC_API_URL = 'https://learning.zney295.id.vn'
+npm run build
+npm run verify:frontend-boundary
 ```
 
 ## Backup and restore

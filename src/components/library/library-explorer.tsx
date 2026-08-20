@@ -2,7 +2,7 @@
 
 import { BookOpen, ChevronRight, Search, Volume2, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { ContentView } from "@/services/content-service";
+import type { ContentView } from "@/domain/api-contracts";
 
 const tabs = [
   { id: "verb", label: "Verbs" },

@@ -9,13 +9,21 @@ import {
   ShieldCheck,
   Target,
 } from "lucide-react";
-import { getDailyPlan } from "@/services/daily-plan-service";
+import { BackendUnavailable } from "@/components/backend-unavailable";
 import { MissionButton } from "@/components/today/mission-button";
+import type { DailyPlan, DashboardResponse } from "@/domain/api-contracts";
+import { apiRequest } from "@/lib/api-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function TodayPage() {
-  const plan = await getDailyPlan();
+  let plan: DailyPlan;
+  try {
+    ({ plan } = await apiRequest<DashboardResponse>("/api/dashboard"));
+  } catch (error) {
+    console.error("Today backend request failed:", error);
+    return <BackendUnavailable title="Chưa tải được kế hoạch hôm nay" retryHref="/" />;
+  }
   const actionableTasks = plan.tasks.filter((task) => !task.disabled);
   const completedCount = actionableTasks.filter((task) => task.completed).length;
   const progress = actionableTasks.length > 0 ? Math.round((completedCount / actionableTasks.length) * 100) : 0;

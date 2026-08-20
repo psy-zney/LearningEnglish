@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, BarChart3, Brain, Clock3, Target, TrendingUp } from "lucide-react";
-import { getProgressSummary } from "@/services/progress-service";
+import { BackendUnavailable } from "@/components/backend-unavailable";
+import type { ProgressResponse, ProgressSummary } from "@/domain/api-contracts";
+import { apiRequest } from "@/lib/api-client";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +20,13 @@ function Metric({ label, value, note, icon: Icon }: { label: string; value: stri
 }
 
 export default async function ProgressPage() {
-  const progress = await getProgressSummary();
+  let progress: ProgressSummary;
+  try {
+    ({ progress } = await apiRequest<ProgressResponse>("/api/progress"));
+  } catch (error) {
+    console.error("Progress backend request failed:", error);
+    return <BackendUnavailable title="Chưa tải được Progress" retryHref="/progress" />;
+  }
   const maxActivity = Math.max(1, ...progress.activities.map((item) => item.recalls + item.practice + item.learned));
   const nextFocus = progress.topErrors[0];
 
