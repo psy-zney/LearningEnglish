@@ -10,7 +10,6 @@ const prismaClientSingleton = () => {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
   var prismaGlobal4: undefined | ReturnType<typeof prismaClientSingleton>;
 }
 

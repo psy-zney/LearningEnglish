@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import ollama from 'ollama';
 import { verifyToken } from '@/lib/auth';
+import { ollama, ollamaModel } from '@/lib/ollama';
 
 export async function POST(request: Request) {
   try {
@@ -55,7 +55,7 @@ Return ONLY the Vietnamese sentence in plain text, nothing else, no quotes.`;
     }
 
     const response = await ollama.chat({
-      model: 'qwen2.5:3b',
+      model: ollamaModel,
       messages: [{ role: 'user', content: prompt }],
     });
 

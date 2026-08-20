@@ -1,170 +1,140 @@
-"use client";
-
 import Link from "next/link";
-import { AlertCircle, BookOpen, BrainCircuit, ChevronRight, Flame, RefreshCw, Target } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useSoftReveal } from "@/lib/use-soft-reveal";
-import gsap from "gsap";
+import {
+  ArrowRight,
+  Check,
+  ChevronRight,
+  Circle,
+  Clock3,
+  Flame,
+  ShieldCheck,
+  Target,
+} from "lucide-react";
+import { getDailyPlan } from "@/services/daily-plan-service";
+import { MissionButton } from "@/components/today/mission-button";
 
-export default function Dashboard() {
-  const pageRef = useSoftReveal<HTMLDivElement>();
-  const [stats, setStats] = useState({
-    totalWords: 0,
-    wordsToReview: 0,
-    masteredWords: 0,
-    learningWords: 0,
-  });
-  const [animatedStats, setAnimatedStats] = useState({
-    totalWords: 0,
-    wordsToReview: 0,
-    masteredWords: 0,
-    learningWords: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
+export const dynamic = "force-dynamic";
 
-  const fetchStats = async () => {
-    setIsLoading(true);
-    setIsError(false);
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      const res = await fetch(`${apiUrl}/api/dashboard`);
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      
-      const newStats = {
-        totalWords: data.totalWords || 0,
-        wordsToReview: data.wordsToReview || 0,
-        masteredWords: data.masteredWords || 0,
-        learningWords: data.learningWords || 0,
-      };
-
-      setStats(newStats);
-
-      // Animate stats counting up using GSAP
-      const countObj = {
-        totalWords: animatedStats.totalWords,
-        wordsToReview: animatedStats.wordsToReview,
-        masteredWords: animatedStats.masteredWords,
-        learningWords: animatedStats.learningWords,
-      };
-
-      gsap.to(countObj, {
-        totalWords: newStats.totalWords,
-        wordsToReview: newStats.wordsToReview,
-        masteredWords: newStats.masteredWords,
-        learningWords: newStats.learningWords,
-        duration: 0.85,
-        ease: "power2.out",
-        onUpdate: () => {
-          setAnimatedStats({
-            totalWords: Math.round(countObj.totalWords),
-            wordsToReview: Math.round(countObj.wordsToReview),
-            masteredWords: Math.round(countObj.masteredWords),
-            learningWords: Math.round(countObj.learningWords),
-          });
-        }
-      });
-
-    } catch (error) {
-      console.error("Dashboard fetch error:", error);
-      setIsError(true);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void fetchStats();
-  }, []);
-
-  if (isError) {
-    return (
-      <div ref={pageRef} className="study-page flex min-h-[70vh] items-center justify-center">
-        <div data-reveal className="study-panel max-w-md p-6 text-center">
-          <AlertCircle className="mx-auto mb-4 size-11 text-[var(--danger)]" />
-          <h1 className="text-2xl font-bold">Backend is offline</h1>
-          <p className="muted mt-2">Cannot connect to the database or local AI service.</p>
-          <button onClick={fetchStats} className="btn-primary mt-5">
-            <RefreshCw className="size-4" />
-            Try again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="study-page flex min-h-[70vh] items-center justify-center">
-        <div className="study-panel flex items-center gap-3 px-5 py-4 text-[var(--muted)]">
-          <RefreshCw className="size-5 animate-spin text-[var(--primary)]" />
-          Loading study plan
-        </div>
-      </div>
-    );
-  }
-
-  const progress = animatedStats.totalWords > 0 ? Math.round((animatedStats.masteredWords / animatedStats.totalWords) * 100) : 0;
+export default async function TodayPage() {
+  const plan = await getDailyPlan();
+  const actionableTasks = plan.tasks.filter((task) => !task.disabled);
+  const completedCount = actionableTasks.filter((task) => task.completed).length;
+  const progress = actionableTasks.length > 0 ? Math.round((completedCount / actionableTasks.length) * 100) : 0;
+  const nextTask = actionableTasks.find((task) => !task.completed) ?? actionableTasks.at(-1);
+  const dateLabel = new Intl.DateTimeFormat("vi-VN", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  }).format(new Date());
 
   return (
-    <div ref={pageRef} className="study-page space-y-5">
-      <section data-reveal className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+    <div className="study-page space-y-6">
+      <header className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
-          <p className="text-sm font-bold uppercase tracking-wide text-[var(--primary)]">Today</p>
-          <h1 className="mt-1 text-3xl font-extrabold leading-tight md:text-4xl">Daily English study</h1>
-          <p className="muted mt-2 max-w-2xl">
-            Review due words first, then add new vocabulary when your list is clear.
-          </p>
+          <p className="eyebrow">{dateLabel}</p>
+          <h1 className="mt-2 max-w-2xl text-3xl font-extrabold leading-[1.12] tracking-[-0.015em] md:text-5xl">Một kế hoạch rõ ràng. Một bước tiếp theo.</h1>
+          <p className="muted mt-3 max-w-2xl leading-7">Ôn đúng hạn trước, học theo cụm, rồi dùng lại trong format TOEIC. AI có thể tắt mà phiên học vẫn chạy.</p>
         </div>
-        <div className="study-card flex w-fit items-center gap-3 px-4 py-3 shadow-sm">
-          <Flame className="size-5 text-[var(--primary-hover)] animate-pulse" />
+        <div className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+          <Flame className="size-5 text-[var(--warning)]" />
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-[var(--muted-2)]">Streak</p>
-            <p className="font-bold">3 days</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--muted-2)]">Nhịp học thật</p>
+            <p className="font-extrabold">{plan.streak} ngày liên tiếp</p>
           </div>
         </div>
-      </section>
+      </header>
 
-      <section data-reveal className="study-panel grid gap-4 p-5 md:grid-cols-[1.3fr_0.8fr] shadow-md">
-        <div className="flex flex-col justify-between gap-6">
+      {plan.recoveryMode && (
+        <section className="study-panel flex items-start gap-3 border-[var(--warning)]/40 p-4">
+          <ShieldCheck className="mt-0.5 size-5 shrink-0 text-[var(--warning)]" />
           <div>
-            <div className="mb-4 grid size-11 place-items-center rounded-xl bg-[rgba(255,255,255,0.08)] text-[var(--foreground)] ring-1 ring-[var(--primary)]/20">
-              <Target className="size-5" />
+            <p className="font-bold">Recovery mode đang bật</p>
+            <p className="muted mt-1 text-sm">Backlog hiện có {plan.dueCount} mục. Nội dung mới được tạm dừng và review sẽ chia thành phiên ngắn.</p>
+          </div>
+        </section>
+      )}
+
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.72fr)]">
+        <div className="study-panel overflow-hidden">
+          <div className="flex flex-col gap-4 border-b border-[var(--border)] p-5 sm:flex-row sm:items-center sm:justify-between md:p-6">
+            <div>
+              <p className="eyebrow">Daily session · 60 phút</p>
+              <h2 className="mt-1 text-2xl font-extrabold">Session rail</h2>
             </div>
-            <p className="text-sm font-bold uppercase tracking-wide text-[var(--muted-2)]">Due for review</p>
-            <p className="mt-2 text-6xl font-extrabold leading-none">{animatedStats.wordsToReview}</p>
+            {nextTask && (
+              <Link href={nextTask.href} className="btn-primary">
+                {completedCount > 0 ? "Tiếp tục" : "Bắt đầu"}
+                <ArrowRight className="size-4" />
+              </Link>
+            )}
           </div>
-          <Link href="/practice" className="btn-primary w-full md:w-fit transition-all duration-200 hover:scale-[1.02] hover:shadow-lg">
-            Start practice
-            <ChevronRight className="size-4" />
-          </Link>
+
+          <ol className="divide-y divide-[var(--border)]">
+            {plan.tasks.map((task, index) => {
+              const taskDone = task.completed && !task.disabled;
+              const disabledLabel = task.id === "listen" ? "Phase sau" : plan.recoveryMode ? "Recovery pause" : "Core đã mở";
+              return (
+              <li key={task.id} className={`grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-3 px-5 py-4 md:px-6 ${task.disabled ? "bg-[var(--surface)] text-[var(--muted)]" : ""}`}>
+                <span className={`grid size-8 place-items-center rounded-full border text-xs font-extrabold ${taskDone ? "border-[var(--success)] bg-[var(--success)] text-[#052016]" : "border-[var(--border)] text-[var(--muted)]"}`}>
+                  {taskDone ? <Check className="size-4" /> : index + 1}
+                </span>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-bold">{task.title}</p>
+                    {task.disabled && <span className="status-pill">{disabledLabel}</span>}
+                  </div>
+                  <p className="muted mt-1 truncate text-sm">{task.detail}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="hidden items-center gap-1 text-xs text-[var(--muted-2)] sm:flex"><Clock3 className="size-3.5" />{task.minutes}m</span>
+                  {!task.disabled && task.id !== "mission" ? (
+                    <Link href={task.href} aria-label={`Mở ${task.title}`} className="grid size-9 place-items-center rounded-xl text-[var(--muted)] hover:bg-[var(--panel-soft)] hover:text-[var(--foreground)]"><ChevronRight className="size-5" /></Link>
+                  ) : taskDone ? <Check className="size-5 text-[var(--success)]" /> : <Circle className="size-4 text-[var(--muted-2)]" />}
+                </div>
+              </li>
+              );
+            })}
+          </ol>
         </div>
 
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
-          <p className="text-sm font-bold uppercase tracking-wide text-[var(--muted-2)]">Mastery</p>
-          <div className="mt-4 flex items-end justify-between gap-3">
-            <p className="text-4xl font-extrabold text-[var(--foreground)]">{progress}%</p>
-            <p className="muted text-sm">{animatedStats.masteredWords} mastered</p>
+        <aside className="space-y-5">
+          <div className="study-panel p-5 md:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="eyebrow">Mục tiêu</p>
+                <p className="mt-2 text-6xl font-extrabold tracking-[-0.015em]">650</p>
+                <p className="muted mt-2 text-sm">TOEIC Listening &amp; Reading</p>
+              </div>
+              <Target className="size-7 text-[var(--primary)]" />
+            </div>
+            <div className="mt-6 flex items-center gap-4">
+              <div className="relative grid size-20 shrink-0 place-items-center rounded-full" style={{ background: `conic-gradient(var(--primary) ${progress}%, var(--panel-soft) ${progress}% 100%)` }}>
+                <div className="grid size-[66px] place-items-center rounded-full bg-[var(--panel)] text-lg font-extrabold">{progress}%</div>
+              </div>
+              <div>
+                <p className="font-bold">{completedCount}/{actionableTasks.length} nhiệm vụ</p>
+                <p className="muted mt-1 text-sm">Tiến độ dựa trên việc hôm nay, không quy đổi từ số flashcard.</p>
+              </div>
+            </div>
           </div>
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--panel-soft)]">
-            <div className="h-full rounded-full bg-[var(--success)] transition-all duration-300" style={{ width: `${progress}%` }} />
+
+          <div className="study-card p-5">
+            <p className="eyebrow">Starter core</p>
+            <div className="mt-3 flex items-end justify-between gap-3">
+              <p className="text-3xl font-extrabold">{plan.totalContent}</p>
+              <p className="muted text-sm">mục đã duyệt</p>
+            </div>
+            <p className="muted mt-3 text-sm leading-6">40 verbs · 51 phrases · 12 tense families. Đây là core đã kiểm tra, không phải lời hứa “học 103 mục = 650”.</p>
           </div>
-          <p className="muted mt-4 text-sm">{animatedStats.learningWords} words still learning.</p>
-        </div>
+        </aside>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
-        <Link data-reveal href="/vocabulary" className="study-card p-5 border border-[var(--border)] hover:border-[var(--primary)] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
-          <BookOpen className="mb-4 size-6 text-[var(--primary)]" />
-          <h2 className="text-xl font-bold">Add and clean up words</h2>
-          <p className="muted mt-2">Save English words with Vietnamese meanings, pronunciation, and AI checks.</p>
-        </Link>
-        <Link data-reveal href="/practice" className="study-card p-5 border border-[var(--border)] hover:border-[var(--primary)] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
-          <BrainCircuit className="mb-4 size-6 text-[var(--success)]" />
-          <h2 className="text-xl font-bold">Practice active recall</h2>
-          <p className="muted mt-2">Use translation, cloze, and flashcards for daily study sessions.</p>
-        </Link>
+      <section id="mission" className="study-panel grid gap-5 p-5 md:grid-cols-[1fr_auto] md:items-center md:p-6">
+        <div>
+          <p className="eyebrow">Live with English · 5 phút</p>
+          <h2 className="mt-2 text-xl font-extrabold">Viết 3 việc bạn sẽ làm hôm nay bằng cụm đã học.</h2>
+          <p className="muted mt-2 max-w-3xl text-sm leading-6">Gợi ý: <span className="text-[var(--foreground)]">follow up on</span>, <span className="text-[var(--foreground)]">make sure</span>, <span className="text-[var(--foreground)]">by the end of</span>. Tự đánh giá sau khi bạn thật sự viết xong.</p>
+        </div>
+        <MissionButton completed={plan.tasks.find((task) => task.id === "mission")?.completed ?? false} />
       </section>
     </div>
   );

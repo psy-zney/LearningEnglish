@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TOEIC 650 Study Cabin
 
-## Getting Started
+A local-first, single-learner TOEIC Listening & Reading study system. The core loop is deterministic and works without Ollama:
 
-First, run the development server:
+`Today → Learn patterns → Review due items → TOEIC Part 5 → Progress`
 
-```bash
+The product treats phrases, verb patterns, and tense decisions as learning units. AI remains optional enrichment for the legacy vocabulary tools; it never determines TOEIC answers or review scheduling.
+
+## Requirements
+
+- Node.js 20.9 or newer
+- npm
+- SQLite (used through Prisma/libSQL; no separate SQLite CLI required)
+- Optional: Ollama with `qwen2.5:3b` for legacy vocabulary enrichment
+
+## Local setup
+
+```powershell
+Copy-Item .env.example .env
+npm ci
+$env:DATABASE_URL = 'file:dev.db'
+npx prisma db push
+npm run data:seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000>.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The recommended mode is local-only and single-user. Learning, review, Part 5 grading, and progress do not require login or Ollama. `/login` remains only for editing legacy vocabulary records.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Data commands
 
-## Learn More
+```powershell
+npm run data:validate
+npm run data:seed
+```
 
-To learn more about Next.js, take a look at the following resources:
+The canonical starter pack is [src/data/toeic650-source-data.ts](src/data/toeic650-source-data.ts): 40 core verbs, 12 tense families, and 51 workplace phrases. The first-sprint Part 5 pack contains 30 original deterministic questions with option rationales.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Seeding is idempotent:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- source items are upserted by stable `sourceKey`;
+- a source update never overwrites `ReviewState` or `Attempt`;
+- removed pack items are archived, not deleted;
+- old `Word` records are imported as `legacy_word` content with their SRS state preserved.
 
-## Deploy on Vercel
+## Quality checks
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```powershell
+npm run data:validate
+npm run lint
+npm run typecheck
+npm run build
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Backup and restore
+
+Stop the dev server before copying the database.
+
+```powershell
+New-Item -ItemType Directory -Path backups -Force
+Copy-Item dev.db backups/dev-$(Get-Date -Format yyyyMMdd-HHmmss).db
+```
+
+To restore, stop the app, copy the chosen backup to a temporary filename, verify its size, and only then replace `dev.db`. Backups and the runtime database are ignored by Git; the currently tracked historical `dev.db` should be untracked in a dedicated repository-maintenance commit after confirming the backup.
+
+## Optional Ollama
+
+```powershell
+ollama pull qwen2.5:3b
+ollama serve
+```
+
+If Ollama is offline, only legacy AI enrichment reports an error. Today, Learn, Review, deterministic practice, and Progress continue to work.
+
+## Product limits
+
+- The 103-item starter core is not a complete TOEIC 650 syllabus.
+- The app does not estimate a TOEIC score from flashcards or a short Part 5 drill.
+- Listening Parts 2–4, Part 6/7 passages, diagnostics, and fixed-blueprint mock tests remain later phases.

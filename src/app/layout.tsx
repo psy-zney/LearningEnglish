@@ -3,8 +3,8 @@ import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 
 export const metadata: Metadata = {
-  title: "AI English Learning",
-  description: "Daily English vocabulary study with local AI",
+  title: "TOEIC 650 Study Cabin",
+  description: "Hệ thống học TOEIC theo pattern, retrieval và luyện tập có cấu trúc.",
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="vi" suppressHydrationWarning>
       <body className="min-h-screen antialiased">
         <AppShell>{children}</AppShell>
       </body>

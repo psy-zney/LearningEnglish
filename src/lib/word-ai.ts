@@ -1,4 +1,4 @@
-import ollama from 'ollama';
+import { ollama, ollamaModel } from '@/lib/ollama';
 
 export type WordValidationResult = {
   status: string;
@@ -24,7 +24,7 @@ Respond strictly in JSON format with these keys:
 Strictly return ONLY a raw JSON object.`;
 
   const response = await ollama.chat({
-    model: 'qwen2.5:3b',
+    model: ollamaModel,
     messages: [{ role: 'user', content: prompt }],
     format: 'json',
   });

@@ -27,3 +27,115 @@ model Word {
   easeFactor     Float    @default(2.5)
   tags           String?  // Comma separated tags for contextual learning
 }
+
+model ContentItem {
+  id             String       @id @default(uuid())
+  sourceKey      String       @unique
+  kind           String
+  title          String
+  meaningVi      String
+  contentJson    String
+  topic          String?
+  toeicParts     String
+  cefr           String?
+  priority       Int          @default(2)
+  status         String       @default("approved")
+  sourceVersion  String
+  archivedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  reviewState    ReviewState?
+  attempts       Attempt[]
+
+  @@index([kind, status])
+  @@index([priority, archivedAt])
+}
+
+model ReviewState {
+  id             String      @id @default(uuid())
+  contentItemId  String      @unique
+  stage          String      @default("recall")
+  nextReviewAt   DateTime    @default(now())
+  interval       Int         @default(0)
+  repetition     Int         @default(0)
+  easeFactor     Float       @default(2.5)
+  lapses         Int         @default(0)
+  lastRating     String?
+  lastReviewedAt DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  contentItem    ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+
+  @@index([nextReviewAt])
+}
+
+model Exercise {
+  id              String    @id
+  part            Int
+  prompt          String
+  context         String?
+  optionsJson     String
+  correctOptionId String
+  explanationVi   String
+  errorCategory   String
+  focusContentIds String
+  difficulty      Int       @default(1)
+  status          String    @default("approved")
+  sourceVersion   String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  attempts        Attempt[]
+
+  @@index([part, status])
+}
+
+model StudySession {
+  id             String    @id @default(uuid())
+  sessionDate    String
+  kind           String
+  status         String    @default("active")
+  planJson       String
+  completedJson  String    @default("[]")
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  updatedAt      DateTime  @updatedAt
+  attempts       Attempt[]
+
+  @@index([sessionDate, kind])
+}
+
+model Attempt {
+  id             String        @id @default(uuid())
+  contentItemId  String?
+  exerciseId     String?
+  studySessionId String?
+  mode           String
+  answer         String?
+  correctAnswer  String?
+  isCorrect      Boolean?
+  errorCategory  String?
+  rating         String?
+  responseTimeMs Int?
+  metadataJson   String?
+  createdAt      DateTime      @default(now())
+  contentItem    ContentItem?  @relation(fields: [contentItemId], references: [id], onDelete: SetNull)
+  exercise       Exercise?     @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  studySession   StudySession? @relation(fields: [studySessionId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([contentItemId, createdAt])
+  @@index([exerciseId, createdAt])
+}
+
+model DailyActivity {
+  id               String   @id @default(uuid())
+  activityDate     String   @unique
+  reviewsCompleted Int      @default(0)
+  itemsLearned     Int      @default(0)
+  practiceAnswered Int      @default(0)
+  practiceCorrect  Int      @default(0)
+  missionCompleted Boolean  @default(false)
+  minutesStudied   Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}

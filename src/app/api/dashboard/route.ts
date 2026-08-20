@@ -1,36 +1,11 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { getDailyPlan } from '@/services/daily-plan-service';
+import { getProgressSummary } from '@/services/progress-service';
 
 export async function GET() {
   try {
-    const totalWords = await prisma.word.count();
-    
-    // Words due for review today (nextReviewDate <= now)
-    const now = new Date();
-    const wordsToReview = await prisma.word.count({
-      where: {
-        nextReviewDate: {
-          lte: now,
-        },
-      },
-    });
-
-    const masteredWords = await prisma.word.count({
-      where: {
-        interval: {
-          gte: 21, // Arbitrary threshold for "mastered" (e.g., interval > 21 days)
-        },
-      },
-    });
-
-    const learningWords = totalWords - masteredWords;
-
-    return NextResponse.json({
-      totalWords,
-      wordsToReview,
-      masteredWords,
-      learningWords,
-    });
+    const [plan, progress] = await Promise.all([getDailyPlan(), getProgressSummary()]);
+    return NextResponse.json({ plan, progress });
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
     return NextResponse.json(
