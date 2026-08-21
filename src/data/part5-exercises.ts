@@ -1,4 +1,5 @@
 import type { ExerciseOption, Part5Exercise } from "@/domain/exercise";
+import { expandedPart5Exercises } from "./part5-expansion-exercises.ts";
 const ERROR_CATEGORIES = {
   subjectVerbAgreement: "subject_verb_agreement",
   tense: "tense_or_time_anchor",
@@ -41,7 +42,7 @@ function q(
   };
 }
 
-export const part5Exercises: Part5Exercise[] = [
+const starterPart5Exercises: Part5Exercise[] = [
   q("p5-001", "All department heads must _____ the budget meeting on Friday.", ["attend", "attends", "attended", "attending"], 0, "Sau động từ khuyết thiếu must dùng động từ nguyên mẫu: must attend.", ERROR_CATEGORIES.verbForm, ["verb-attend"]),
   q("p5-002", "The interview is scheduled _____ at nine o'clock.", ["begin", "to begin", "beginning", "began"], 1, "Cấu trúc be scheduled to + V diễn tả việc đã được lên lịch.", ERROR_CATEGORIES.verbForm, ["verb-schedule", "phrase-scheduled-to"]),
   q("p5-003", "Please _____ the registration form before submitting it.", ["fill out", "run out of", "set up", "check out"], 0, "Fill out + form/application nghĩa là điền vào biểu mẫu.", ERROR_CATEGORIES.wordChoice, ["phrase-fill-out"]),
@@ -74,9 +75,12 @@ export const part5Exercises: Part5Exercise[] = [
   q("p5-030", "I am writing on _____ of the customer service department.", ["behalf", "response", "regard", "accordance"], 0, "On behalf of nghĩa là thay mặt cho một người hoặc tổ chức.", ERROR_CATEGORIES.wordChoice, ["phrase-on-behalf-of"], 2),
 ];
 
-export function validatePart5Exercises() {
+export const part5Exercises: Part5Exercise[] = [...starterPart5Exercises, ...expandedPart5Exercises];
+
+export function validatePart5Exercises(validContentIds?: ReadonlySet<string>) {
   const errors: string[] = [];
   const ids = new Set<string>();
+  const prompts = new Set<string>();
 
   for (const exercise of part5Exercises) {
     if (ids.has(exercise.id)) errors.push(`Duplicate exercise id: ${exercise.id}`);
@@ -87,6 +91,15 @@ export function validatePart5Exercises() {
     }
     if (new Set(exercise.options.map((option) => option.text)).size !== exercise.options.length) {
       errors.push(`Exercise ${exercise.id} has duplicate option text`);
+    }
+    const normalizedPrompt = exercise.prompt.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+    if (prompts.has(normalizedPrompt)) errors.push(`Duplicate exercise prompt: ${exercise.id}`);
+    prompts.add(normalizedPrompt);
+    if (exercise.focusContentIds.length === 0) errors.push(`Exercise ${exercise.id} has no focus content`);
+    if (validContentIds) {
+      for (const contentId of exercise.focusContentIds) {
+        if (!validContentIds.has(contentId)) errors.push(`Exercise ${exercise.id} references unknown content: ${contentId}`);
+      }
     }
   }
 

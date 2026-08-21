@@ -20,9 +20,9 @@ export default async function ReviewPage() {
     <div className="study-page space-y-6">
       <header className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <p className="eyebrow">Review · Due only</p>
+          <p className="eyebrow">Review · Due first</p>
           <h1 className="mt-2 text-3xl font-extrabold leading-tight tracking-[-0.015em] md:text-4xl">Nhớ trước. Giải thích sau.</h1>
-          <p className="muted mt-3 max-w-2xl leading-7">Hàng đợi ưu tiên mục quá hạn, lỗi gần đây và nội dung quan trọng cho mục tiêu 650.</p>
+          <p className="muted mt-3 max-w-2xl leading-7">Ưu tiên mục đến hạn; khi hàng đợi sạch, hệ thống lấy các mục cũ để củng cố chủ động.</p>
         </div>
         <div className="status-pill w-fit"><RotateCcw className="size-3.5" />{queue.length} lượt trong phiên</div>
       </header>

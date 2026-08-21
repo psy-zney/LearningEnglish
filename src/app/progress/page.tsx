@@ -45,6 +45,25 @@ export default async function ProgressPage() {
         <Metric label="Median time" value={progress.part5.medianSeconds === null ? "—" : `${progress.part5.medianSeconds}s`} note="Median response time cho Part 5, không gồm thời gian xem feedback." icon={Clock3} />
       </section>
 
+      <section className="study-panel p-5 md:p-6">
+        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+          <div>
+            <p className="eyebrow">Core drill evidence</p>
+            <h2 className="mt-2 text-xl font-extrabold">Nghĩa, điền từ và pattern</h2>
+          </div>
+          <p className="muted text-sm">{progress.drills.answered} câu · {progress.drills.accuracy === null ? "chưa có accuracy" : `${progress.drills.accuracy}% đúng`} · median {progress.drills.medianSeconds === null ? "—" : `${progress.drills.medianSeconds}s`}</p>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {progress.drills.byMode.map((mode) => (
+            <div key={mode.mode} className="study-card p-4">
+              <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--muted-2)]">{mode.mode.replaceAll("_", " ")}</p>
+              <p className="mt-2 text-2xl font-extrabold">{mode.accuracy === null ? "—" : `${mode.accuracy}%`}</p>
+              <p className="muted mt-1 text-xs">{mode.answered} câu · {mode.medianSeconds === null ? "—" : `${mode.medianSeconds}s`}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)]">
         <div className="study-panel p-5 md:p-6">
           <div className="flex items-start justify-between gap-4">

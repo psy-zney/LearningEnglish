@@ -17,13 +17,13 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const data = await apiRequest<{ token?: string }>("/api/auth/login", {
+      const data = await apiRequest<{ success: boolean }>("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({ password }),
       });
-      if (data.token) {
-        localStorage.setItem("admin_token", data.token);
+      if (data.success) {
         router.push("/");
+        router.refresh();
       } else {
         setError("Mật khẩu không đúng.");
       }

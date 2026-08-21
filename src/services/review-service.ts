@@ -10,7 +10,7 @@ export async function getDueReviewQueue(limit = 30, now = new Date()) {
   const recentSince = new Date(now);
   recentSince.setDate(recentSince.getDate() - 7);
 
-  const [states, recentErrors] = await Promise.all([
+  const [dueStates, recentErrors] = await Promise.all([
     prisma.reviewState.findMany({
       where: { nextReviewAt: { lte: now }, contentItem: { archivedAt: null } },
       include: { contentItem: true },
@@ -20,6 +20,14 @@ export async function getDueReviewQueue(limit = 30, now = new Date()) {
       select: { contentItemId: true },
     }),
   ]);
+  const states = dueStates.length > 0
+    ? dueStates
+    : await prisma.reviewState.findMany({
+        where: { contentItem: { archivedAt: null } },
+        include: { contentItem: true },
+        orderBy: [{ lastReviewedAt: "asc" }, { createdAt: "asc" }],
+        take: limit,
+      });
 
   const errorCounts = new Map<string, number>();
   for (const attempt of recentErrors) {
@@ -34,7 +42,7 @@ export async function getDueReviewQueue(limit = 30, now = new Date()) {
     nextReviewAt: state.nextReviewAt,
     recentErrors: errorCounts.get(state.contentItemId) ?? 0,
   }));
-  const orderedIds = buildReviewQueue(candidates, now, limit).map((item) => item.id);
+  const orderedIds = buildReviewQueue(candidates, now, limit, { includeNotDue: dueStates.length === 0 }).map((item) => item.id);
   const stateById = new Map(states.map((state) => [state.id, state]));
 
   return orderedIds.map((id) => {
@@ -46,7 +54,7 @@ export async function getDueReviewQueue(limit = 30, now = new Date()) {
   });
 }
 
-export async function rateReview(contentItemId: string, rating: ReviewRating, answer?: string) {
+export async function rateReview(contentItemId: string, rating: ReviewRating, answer?: string, responseTimeMs?: number) {
   const now = new Date();
   const dateKey = toLocalDateKey(now);
 
@@ -81,6 +89,7 @@ export async function rateReview(contentItemId: string, rating: ReviewRating, an
         isCorrect,
         errorCategory: isCorrect ? null : "content_recall",
         rating,
+        responseTimeMs,
       },
     });
     await tx.dailyActivity.upsert({
@@ -105,19 +114,27 @@ export async function completeLearnSession(contentItemIds: string[]) {
   const dateKey = toLocalDateKey(now);
 
   return prisma.$transaction(async (tx) => {
+    const existingStates = await tx.reviewState.findMany({
+      where: { contentItemId: { in: uniqueIds } },
+      select: { contentItemId: true },
+    });
+    const existingIds = new Set(existingStates.map((state) => state.contentItemId));
+    let learned = 0;
     for (const contentItemId of uniqueIds) {
+      const reinforcement = existingIds.has(contentItemId);
       await tx.reviewState.upsert({
         where: { contentItemId },
         create: { contentItemId, nextReviewAt: now, stage: "recall" },
-        update: {},
+        update: reinforcement ? { lastReviewedAt: now } : {},
       });
-      await tx.attempt.create({ data: { contentItemId, mode: "learn" } });
+      await tx.attempt.create({ data: { contentItemId, mode: reinforcement ? "reinforce" : "learn" } });
+      if (!reinforcement) learned += 1;
     }
     await tx.dailyActivity.upsert({
       where: { activityDate: dateKey },
-      create: { activityDate: dateKey, itemsLearned: uniqueIds.length, minutesStudied: 10 },
-      update: { itemsLearned: { increment: uniqueIds.length }, minutesStudied: { increment: 10 } },
+      create: { activityDate: dateKey, itemsLearned: learned, minutesStudied: 10 },
+      update: { itemsLearned: { increment: learned }, minutesStudied: { increment: 10 } },
     });
-    return { learned: uniqueIds.length };
+    return { learned, reinforced: uniqueIds.length - learned };
   });
 }

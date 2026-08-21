@@ -1,0 +1,24 @@
+{
+  "datasetId": "replace-with-dataset-id",
+  "version": "replace-with-version-or-acquisition-date",
+  "sourceUrl": "https://replace.example/official-dataset-page",
+  "license": "CC BY 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "attribution": "Replace with the required dataset attribution",
+  "rightsConfirmed": false,
+  "items": [
+    {
+      "id": "replace-with-stable-item-id",
+      "text": "Replace with a licensed English example containing the target.",
+      "translation": "Thay bằng bản dịch tiếng Việt đã được kiểm tra.",
+      "target": "target",
+      "source": {
+        "externalId": "replace-with-source-record-id",
+        "sourceUrl": "https://replace.example/source-record",
+        "license": "CC BY 4.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+        "attribution": "Replace with the item author/source attribution"
+      }
+    }
+  ]
+}

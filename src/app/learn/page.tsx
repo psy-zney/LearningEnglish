@@ -7,10 +7,18 @@ import { apiRequest } from "@/lib/api-client";
 
 export const dynamic = "force-dynamic";
 
-export default async function LearnPage() {
+export default async function LearnPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string | string[] }>;
+}) {
+  const requestedMode = (await searchParams).mode;
+  const reinforce = requestedMode === "reinforce";
   let items: ContentView[];
   try {
-    ({ items } = await apiRequest<ContentListResponse>("/api/learn/content?limit=6"));
+    ({ items } = await apiRequest<ContentListResponse>(
+      `/api/learn/content?limit=6${reinforce ? "&mode=reinforce" : ""}`,
+    ));
   } catch (error) {
     console.error("Learn backend request failed:", error);
     return <BackendUnavailable title="Chưa tải được phiên Learn" retryHref="/learn" />;
@@ -20,9 +28,9 @@ export default async function LearnPage() {
     <div className="study-page space-y-6">
       <header className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <p className="eyebrow">Learn · Pattern first</p>
-          <h1 className="mt-2 text-3xl font-extrabold leading-tight tracking-[-0.015em] md:text-4xl">Học ít, nhưng học thành cấu trúc.</h1>
-          <p className="muted mt-3 max-w-2xl leading-7">Mỗi mục đi qua rule → context → recall. Chỉ sau đó nó mới vào hàng đợi ôn tập.</p>
+          <p className="eyebrow">{reinforce ? "Reinforce · Pattern again" : "Learn · Pattern first"}</p>
+          <h1 className="mt-2 text-3xl font-extrabold leading-tight tracking-[-0.015em] md:text-4xl">{reinforce ? "Củng cố cấu trúc đã học." : "Học ít, nhưng học thành cấu trúc."}</h1>
+          <p className="muted mt-3 max-w-2xl leading-7">{reinforce ? "Lấy lại các mẫu câu đã mở để nhớ chủ động, không nạp thêm nội dung mới." : "Mỗi mục đi qua rule → context → recall. Chỉ sau đó nó mới vào hàng đợi ôn tập."}</p>
         </div>
         <div className="status-pill w-fit"><Layers3 className="size-3.5" />{items.length} mục trong phiên</div>
       </header>

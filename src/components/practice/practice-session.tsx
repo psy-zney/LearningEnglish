@@ -2,9 +2,10 @@
 
 import { ArrowRight, Check, Clock3, Loader2, Target, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PracticeExerciseView } from "@/domain/api-contracts";
 import { apiRequest } from "@/lib/api-client";
+import { playAnswerFeedback } from "@/lib/feedback-sound";
 
 type AnswerFeedback = {
   correct: boolean;
@@ -20,14 +21,27 @@ export function PracticeSession({ exercises }: { exercises: PracticeExerciseView
   const [selected, setSelected] = useState("");
   const [feedback, setFeedback] = useState<AnswerFeedback | null>(null);
   const [isChecking, setIsChecking] = useState(false);
-  const [startedAt, setStartedAt] = useState(() => Date.now());
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [results, setResults] = useState<Array<{ correct: boolean; errorCategory: string | null }>>([]);
   const [error, setError] = useState("");
+  const startedAtRef = useRef(0);
+  const submittingRef = useRef(false);
   const current = exercises[index];
   const finished = index >= exercises.length;
 
-  async function submit() {
-    if (!selected || feedback) return;
+  useEffect(() => {
+    if (finished || feedback) return;
+    startedAtRef.current = Date.now();
+    setElapsedSeconds(0);
+    const timer = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startedAtRef.current) / 1_000));
+    }, 500);
+    return () => clearInterval(timer);
+  }, [feedback, finished, index]);
+
+  const submit = useCallback(async () => {
+    if (!selected || feedback || submittingRef.current) return;
+    submittingRef.current = true;
     setIsChecking(true);
     setError("");
     let data: AnswerFeedback;
@@ -37,26 +51,50 @@ export function PracticeSession({ exercises }: { exercises: PracticeExerciseView
         body: JSON.stringify({
           exerciseId: current.id,
           selectedOptionId: selected,
-          responseTimeMs: Date.now() - startedAt,
+          responseTimeMs: Date.now() - startedAtRef.current,
         }),
       });
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Không thể chấm câu trả lời.");
+      submittingRef.current = false;
       setIsChecking(false);
       return;
     }
     setFeedback(data);
     setResults((values) => [...values, { correct: data.correct, errorCategory: data.errorCategory }]);
+    playAnswerFeedback(data.correct);
+    submittingRef.current = false;
     setIsChecking(false);
-  }
+  }, [current, feedback, selected]);
 
-  function next() {
+  const next = useCallback(() => {
     setIndex((value) => value + 1);
     setSelected("");
     setFeedback(null);
     setError("");
-    setStartedAt(Date.now());
-  }
+  }, []);
+
+  useEffect(() => {
+    if (finished) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
+      if (event.target instanceof HTMLElement && event.target.closest("button, a, input, textarea")) return;
+      if (/^[1-4]$/.test(event.key) && !feedback) {
+        const option = current.options[Number(event.key) - 1];
+        if (!option) return;
+        event.preventDefault();
+        setSelected(option.id);
+        return;
+      }
+      if (event.key !== "Enter") return;
+      if (!feedback && !selected) return;
+      event.preventDefault();
+      if (feedback) next();
+      else void submit();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [current, feedback, finished, next, selected, submit]);
 
   if (finished) {
     const correct = results.filter((result) => result.correct).length;
@@ -89,7 +127,7 @@ export function PracticeSession({ exercises }: { exercises: PracticeExerciseView
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="eyebrow">Question {index + 1} / {exercises.length}</p>
-              <p className="muted mt-1 flex items-center gap-1.5 text-xs"><Clock3 className="size-3.5" />Recommended: 25 seconds</p>
+              <p className="muted mt-1 flex items-center gap-1.5 text-xs"><Clock3 className="size-3.5" />{elapsedSeconds}s · recommended 25s</p>
             </div>
             <span className="status-pill">Difficulty {current.difficulty}</span>
           </div>
@@ -107,11 +145,12 @@ export function PracticeSession({ exercises }: { exercises: PracticeExerciseView
                   type="button"
                   onClick={() => !feedback && setSelected(option.id)}
                   disabled={Boolean(feedback)}
+                  aria-pressed={isSelected}
                   className={`flex min-h-16 items-center gap-3 rounded-2xl border px-4 py-3 text-left font-bold ${
                     isCorrectOption ? "border-[var(--success)] bg-[rgba(95,118,93,0.08)]" : isWrongSelected ? "border-[var(--danger)] bg-[rgba(166,87,87,0.07)]" : isSelected ? "border-[var(--primary)] bg-[var(--active)]" : "border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--panel-soft)]"
                   }`}
                 >
-                  <span className={`grid size-8 shrink-0 place-items-center rounded-xl border text-xs ${isSelected ? "border-current" : "border-[var(--border)] text-[var(--muted)]"}`}>{option.id}</span>
+                  <span className={`grid size-8 shrink-0 place-items-center rounded-xl border text-xs ${isSelected ? "border-current" : "border-[var(--border)] text-[var(--muted)]"}`}>{option.id}<span className="sr-only"> · phím {current.options.indexOf(option) + 1}</span></span>
                   <span>{option.text}</span>
                   {isCorrectOption && <Check className="ml-auto size-4 text-[var(--success)]" />}
                   {isWrongSelected && <X className="ml-auto size-4 text-[var(--danger)]" />}
@@ -120,6 +159,7 @@ export function PracticeSession({ exercises }: { exercises: PracticeExerciseView
             })}
           </div>
 
+          <div aria-live="polite">
           {!feedback ? (
             <button type="button" onClick={submit} disabled={!selected || isChecking} className="btn-primary mt-6">
               {isChecking ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}Chấm câu trả lời
@@ -132,7 +172,9 @@ export function PracticeSession({ exercises }: { exercises: PracticeExerciseView
               <button type="button" onClick={next} className="btn-primary mt-5">{index === exercises.length - 1 ? "Xem kết quả" : "Câu tiếp theo"}<ArrowRight className="size-4" /></button>
             </div>
           )}
+          </div>
           {error && <p className="mt-4 text-sm text-[var(--danger)]">{error}</p>}
+          <p className="muted mt-3 text-xs">Phím 1–4 để chọn · Enter để chấm/chuyển câu</p>
         </div>
 
         <aside className="border-t border-[var(--border)] bg-[var(--surface)] p-5 lg:border-l lg:border-t-0">

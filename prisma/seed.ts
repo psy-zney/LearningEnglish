@@ -8,6 +8,7 @@ import {
   verbs,
 } from "../src/data/toeic650-source-data.ts";
 import { part5Exercises, validatePart5Exercises } from "../src/data/part5-exercises.ts";
+import { repairKnownLegacyWord, serializeLegacyWordContent } from "../src/lib/legacy-content.ts";
 
 const adapter = new PrismaLibSql({
   url: process.env.DATABASE_URL || "file:dev.db",
@@ -56,11 +57,14 @@ function serializeSourceItem(item: (typeof verbs)[number] | (typeof tenses)[numb
 }
 
 async function main() {
-  const validationErrors = [...validateToeic650SourceData(), ...validatePart5Exercises()];
+  const sourceItems = [...verbs, ...tenses, ...phrases];
+  const validationErrors = [
+    ...validateToeic650SourceData(),
+    ...validatePart5Exercises(new Set(sourceItems.map((item) => item.id))),
+  ];
   if (validationErrors.length > 0) throw new Error(validationErrors.join("\n"));
 
   const report = { created: 0, updated: 0, unchanged: 0, archived: 0, legacy: 0, exercises: 0 };
-  const sourceItems = [...verbs, ...tenses, ...phrases];
   const activeKeys = sourceItems.map((item) => item.id);
 
   for (const item of sourceItems) {
@@ -88,7 +92,7 @@ async function main() {
 
   const archived = await prisma.contentItem.updateMany({
     where: {
-      sourceVersion: { not: "legacy" },
+      kind: { in: ["verb", "phrase", "tense"] },
       sourceKey: { notIn: activeKeys },
       archivedAt: null,
     },
@@ -97,16 +101,27 @@ async function main() {
   report.archived = archived.count;
 
   const legacyWords = await prisma.word.findMany();
-  for (const word of legacyWords) {
+  for (const persistedWord of legacyWords) {
+    const word = repairKnownLegacyWord(persistedWord);
+    if (word !== persistedWord) {
+      await prisma.word.update({
+        where: { id: word.id },
+        data: {
+          meaning: word.meaning,
+          correctMeaning: word.correctMeaning,
+          explanation: word.explanation,
+        },
+      });
+    }
+
     const sourceKey = `legacy-word:${word.id}`;
+    const serializedWord = serializeLegacyWordContent(word);
     const content = await prisma.contentItem.upsert({
       where: { sourceKey },
       create: {
         sourceKey,
         kind: "legacy_word",
-        title: word.correctedWord || word.word,
-        meaningVi: word.correctMeaning || word.meaning,
-        contentJson: JSON.stringify(word),
+        ...serializedWord,
         topic: word.tags || "inbox",
         toeicParts: "",
         priority: 3,
@@ -114,9 +129,7 @@ async function main() {
         sourceVersion: "legacy",
       },
       update: {
-        title: word.correctedWord || word.word,
-        meaningVi: word.correctMeaning || word.meaning,
-        contentJson: JSON.stringify(word),
+        ...serializedWord,
       },
     });
     await prisma.reviewState.upsert({

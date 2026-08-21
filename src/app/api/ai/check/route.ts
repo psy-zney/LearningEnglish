@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server';
-import ollama from 'ollama';
-import { verifyToken } from '@/lib/auth';
+import { isAuthorizedRequest } from '@/lib/auth';
+import { ollama, ollamaModel } from '@/lib/ollama';
 
 export async function POST(request: Request) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.split(' ')[1] || '';
-    if (!verifyToken(token)) {
+    if (!isAuthorizedRequest(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -37,7 +35,7 @@ Hãy đưa ra nhận xét bằng tiếng Việt một cách dễ hiểu, ngắn 
 (Đưa ra một mẹo nhỏ, dễ hiểu để học viên nhớ cấu trúc ngữ pháp hoặc từ vựng này).`;
 
     const response = await ollama.chat({
-      model: 'qwen2.5:3b',
+      model: ollamaModel,
       messages: [{ role: 'user', content: prompt }],
     });
 

@@ -3,7 +3,6 @@ import {
   ArrowRight,
   Check,
   ChevronRight,
-  Circle,
   Clock3,
   Flame,
   ShieldCheck,
@@ -24,7 +23,7 @@ export default async function TodayPage() {
     console.error("Today backend request failed:", error);
     return <BackendUnavailable title="Chưa tải được kế hoạch hôm nay" retryHref="/" />;
   }
-  const actionableTasks = plan.tasks.filter((task) => !task.disabled);
+  const actionableTasks = plan.tasks;
   const completedCount = actionableTasks.filter((task) => task.completed).length;
   const progress = actionableTasks.length > 0 ? Math.round((completedCount / actionableTasks.length) * 100) : 0;
   const nextTask = actionableTasks.find((task) => !task.completed) ?? actionableTasks.at(-1);
@@ -32,7 +31,9 @@ export default async function TodayPage() {
     weekday: "long",
     day: "2-digit",
     month: "long",
-  }).format(new Date());
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(new Date(`${plan.dateKey}T12:00:00+07:00`));
+  const plannedMinutes = actionableTasks.reduce((total, task) => total + task.minutes, 0);
 
   return (
     <div className="study-page space-y-6">
@@ -65,7 +66,7 @@ export default async function TodayPage() {
         <div className="study-panel overflow-hidden">
           <div className="flex flex-col gap-4 border-b border-[var(--border)] p-5 sm:flex-row sm:items-center sm:justify-between md:p-6">
             <div>
-              <p className="eyebrow">Daily session · 60 phút</p>
+              <p className="eyebrow">Daily session · {plannedMinutes} phút</p>
               <h2 className="mt-1 text-2xl font-extrabold">Session rail</h2>
             </div>
             {nextTask && (
@@ -78,25 +79,21 @@ export default async function TodayPage() {
 
           <ol className="divide-y divide-[var(--border)]">
             {plan.tasks.map((task, index) => {
-              const taskDone = task.completed && !task.disabled;
-              const disabledLabel = task.id === "listen" ? "Phase sau" : plan.recoveryMode ? "Recovery pause" : "Core đã mở";
+              const taskDone = task.completed;
               return (
-              <li key={task.id} className={`grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-3 px-5 py-4 md:px-6 ${task.disabled ? "bg-[var(--surface)] text-[var(--muted)]" : ""}`}>
+              <li key={task.id} className="grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-3 px-5 py-4 md:px-6">
                 <span className={`grid size-8 place-items-center rounded-full border text-xs font-extrabold ${taskDone ? "border-[var(--success)] bg-[var(--success)] text-[#052016]" : "border-[var(--border)] text-[var(--muted)]"}`}>
                   {taskDone ? <Check className="size-4" /> : index + 1}
                 </span>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-bold">{task.title}</p>
-                    {task.disabled && <span className="status-pill">{disabledLabel}</span>}
                   </div>
                   <p className="muted mt-1 truncate text-sm">{task.detail}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="hidden items-center gap-1 text-xs text-[var(--muted-2)] sm:flex"><Clock3 className="size-3.5" />{task.minutes}m</span>
-                  {!task.disabled && task.id !== "mission" ? (
-                    <Link href={task.href} aria-label={`Mở ${task.title}`} className="grid size-9 place-items-center rounded-xl text-[var(--muted)] hover:bg-[var(--panel-soft)] hover:text-[var(--foreground)]"><ChevronRight className="size-5" /></Link>
-                  ) : taskDone ? <Check className="size-5 text-[var(--success)]" /> : <Circle className="size-4 text-[var(--muted-2)]" />}
+                  <Link href={task.href} aria-label={`Mở ${task.title}`} className="grid size-9 place-items-center rounded-xl text-[var(--muted)] hover:bg-[var(--panel-soft)] hover:text-[var(--foreground)]"><ChevronRight className="size-5" /></Link>
                 </div>
               </li>
               );
@@ -131,7 +128,7 @@ export default async function TodayPage() {
               <p className="text-3xl font-extrabold">{plan.totalContent}</p>
               <p className="muted text-sm">mục đã duyệt</p>
             </div>
-            <p className="muted mt-3 text-sm leading-6">40 verbs · 51 phrases · 12 tense families. Đây là core đã kiểm tra, không phải lời hứa “học 103 mục = 650”.</p>
+            <p className="muted mt-3 text-sm leading-6">70 verbs · 101 phrases · 12 tense families · 100 câu Part 5. Đây là core đã kiểm tra, không phải lời hứa “học hết = chắc chắn 650”.</p>
           </div>
         </aside>
       </section>
@@ -142,7 +139,7 @@ export default async function TodayPage() {
           <h2 className="mt-2 text-xl font-extrabold">Viết 3 việc bạn sẽ làm hôm nay bằng cụm đã học.</h2>
           <p className="muted mt-2 max-w-3xl text-sm leading-6">Gợi ý: <span className="text-[var(--foreground)]">follow up on</span>, <span className="text-[var(--foreground)]">make sure</span>, <span className="text-[var(--foreground)]">by the end of</span>. Tự đánh giá sau khi bạn thật sự viết xong.</p>
         </div>
-        <MissionButton completed={plan.tasks.find((task) => task.id === "mission")?.completed ?? false} />
+        <MissionButton completed={plan.missionCompleted} />
       </section>
     </div>
   );

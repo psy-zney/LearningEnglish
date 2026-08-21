@@ -86,3 +86,32 @@ export async function getNewContent(limit = 6) {
 
   return mixed.map(toContentView);
 }
+
+export async function getReinforcementContent(limit = 6) {
+  const states = await prisma.reviewState.findMany({
+    where: {
+      contentItem: {
+        archivedAt: null,
+        status: "approved",
+        kind: { in: ["verb", "phrase", "tense", "legacy_word"] },
+      },
+    },
+    include: { contentItem: true },
+    orderBy: [{ lastReviewedAt: "asc" }, { createdAt: "asc" }],
+    take: Math.max(limit, 48),
+  });
+  const items = states.map((state) => ({ ...state.contentItem, reviewState: state }));
+
+  const mixed: typeof items = [];
+  const remaining = [...items];
+  while (remaining.length > 0 && mixed.length < limit) {
+    for (const kind of ["verb", "phrase", "tense", "legacy_word"]) {
+      const index = remaining.findIndex((item) => item.kind === kind);
+      if (index >= 0) mixed.push(remaining.splice(index, 1)[0]);
+      if (mixed.length >= limit) break;
+    }
+  }
+  while (mixed.length < limit && remaining.length > 0) mixed.push(remaining.shift()!);
+
+  return mixed.slice(0, limit).map(toContentView);
+}

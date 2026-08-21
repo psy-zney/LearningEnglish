@@ -1,21 +1,29 @@
 "use client";
 
-import { ArrowRight, Check, Clock3, Loader2, Volume2, X } from "lucide-react";
+import { ArrowRight, Check, Clock3, Loader2, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { PronunciationControls } from "@/components/pronunciation-controls";
 import { isAcceptedAnswer } from "@/lib/answer-normalizer";
 import { apiRequest } from "@/lib/api-client";
+import { playAnswerFeedback } from "@/lib/feedback-sound";
 import type { ReviewRating } from "@/lib/srs";
 import type { ContentView } from "@/domain/api-contracts";
 
 type QueueItem = { reviewStateId: string; content: ContentView };
 
-const ratingOptions: Array<{ rating: ReviewRating; label: string; hint: string; className: string }> = [
-  { rating: "again", label: "Again", hint: "10 phút", className: "border-[var(--danger)]/50 text-[var(--danger)]" },
-  { rating: "hard", label: "Hard", hint: "ngắn", className: "border-[var(--warning)]/50 text-[var(--warning)]" },
-  { rating: "good", label: "Good", hint: "chuẩn", className: "border-[var(--success)]/50 text-[var(--success)]" },
-  { rating: "easy", label: "Easy", hint: "dài hơn", className: "border-[var(--primary)]/50 text-[var(--primary)]" },
+const ratingOptions: Array<{ rating: ReviewRating; shortcut: string; label: string; hint: string; className: string }> = [
+  { rating: "again", shortcut: "1", label: "Again", hint: "10 phút", className: "border-[var(--danger)]/50 text-[var(--danger)]" },
+  { rating: "hard", shortcut: "2", label: "Hard", hint: "ngắn", className: "border-[var(--warning)]/50 text-[var(--warning)]" },
+  { rating: "good", shortcut: "3", label: "Good", hint: "chuẩn", className: "border-[var(--success)]/50 text-[var(--success)]" },
+  { rating: "easy", shortcut: "4", label: "Easy", hint: "dài hơn", className: "border-[var(--primary)]/50 text-[var(--primary)]" },
 ];
+
+function formatElapsed(totalSeconds: number) {
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+  const minutes = Math.floor(totalSeconds / 60);
+  return `${minutes}:${String(totalSeconds % 60).padStart(2, "0")}`;
+}
 
 function getPattern(item: ContentView) {
   if (item.kind === "verb" && Array.isArray(item.detail.patterns)) return String(item.detail.patterns[0] ?? "");
@@ -39,36 +47,107 @@ export function ReviewSession({ queue }: { queue: QueueItem[] }) {
   const [revealed, setRevealed] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const startedAtRef = useRef(0);
+  const enterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savingRef = useRef(false);
+  const answerInputRef = useRef<HTMLInputElement>(null);
   const current = queue[index];
   const finished = index >= queue.length;
   const matched = current ? isAcceptedAnswer(answer, [current.content.title]) : false;
 
-  function speak(text: string) {
-    if (!("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-US";
-    window.speechSynthesis.speak(utterance);
+  useEffect(() => {
+    if (finished) return;
+    startedAtRef.current = Date.now();
+    setElapsedSeconds(0);
+    const timer = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startedAtRef.current) / 1_000));
+    }, 500);
+    return () => clearInterval(timer);
+  }, [finished, index]);
+
+  useEffect(() => {
+    if (finished || revealed) return;
+    answerInputRef.current?.focus();
+    const focusInput = (event: KeyboardEvent) => {
+      if (event.key !== "/" || event.ctrlKey || event.altKey || event.metaKey) return;
+      event.preventDefault();
+      answerInputRef.current?.focus();
+    };
+    window.addEventListener("keydown", focusInput);
+    return () => window.removeEventListener("keydown", focusInput);
+  }, [finished, index, revealed]);
+
+  function revealAnswer() {
+    if (!answer.trim() || revealed) return;
+    playAnswerFeedback(isAcceptedAnswer(answer, [current.content.title]));
+    setRevealed(true);
   }
 
-  async function rate(rating: ReviewRating) {
+  const rate = useCallback(async (rating: ReviewRating) => {
+    if (savingRef.current) return;
+    savingRef.current = true;
     setIsSaving(true);
     setError("");
     try {
       await apiRequest("/api/review/rate", {
         method: "POST",
-        body: JSON.stringify({ contentItemId: current.content.id, rating, answer }),
+        body: JSON.stringify({
+          contentItemId: current.content.id,
+          rating,
+          answer,
+          responseTimeMs: Date.now() - startedAtRef.current,
+        }),
       });
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Không thể lưu lượt ôn.");
+      savingRef.current = false;
       setIsSaving(false);
       return;
     }
     setIndex((value) => value + 1);
     setAnswer("");
     setRevealed(false);
+    savingRef.current = false;
     setIsSaving(false);
-  }
+  }, [answer, current]);
+
+  useEffect(() => {
+    if (!revealed || isSaving) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
+      if (event.target instanceof HTMLElement && event.target.closest("button, a")) return;
+      const numberRating = ratingOptions.find((option) => option.shortcut === event.key)?.rating;
+      if (numberRating) {
+        event.preventDefault();
+        if (enterTimerRef.current) clearTimeout(enterTimerRef.current);
+        enterTimerRef.current = null;
+        void rate(numberRating);
+        return;
+      }
+
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      if (enterTimerRef.current) {
+        clearTimeout(enterTimerRef.current);
+        enterTimerRef.current = null;
+        void rate("hard");
+        return;
+      }
+      enterTimerRef.current = setTimeout(() => {
+        enterTimerRef.current = null;
+        void rate("easy");
+      }, 260);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      if (enterTimerRef.current) clearTimeout(enterTimerRef.current);
+      enterTimerRef.current = null;
+    };
+  }, [isSaving, rate, revealed]);
 
   if (finished) {
     return (
@@ -95,7 +174,7 @@ export function ReviewSession({ queue }: { queue: QueueItem[] }) {
         </div>
         <div className="flex items-center gap-2">
           <span className="status-pill">{current.content.kind.replace("_", " ")}</span>
-          <span className="status-pill"><Clock3 className="size-3" />due</span>
+          <span className="status-pill tabular-nums"><Clock3 className="size-3" />{formatElapsed(elapsedSeconds)}</span>
         </div>
       </div>
 
@@ -103,21 +182,20 @@ export function ReviewSession({ queue }: { queue: QueueItem[] }) {
         <p className="eyebrow">Không nhìn gợi ý</p>
         <h2 className="mt-4 text-3xl font-extrabold leading-tight tracking-[-0.015em] md:text-4xl">{current.content.meaningVi}</h2>
         <p className="muted mt-3">Gõ headword hoặc cả cụm tiếng Anh.</p>
-        <input value={answer} onChange={(event) => { setAnswer(event.target.value); setRevealed(false); }} onKeyDown={(event) => { if (event.key === "Enter" && answer.trim()) setRevealed(true); }} className="study-input mt-7 text-lg" placeholder="Câu trả lời của bạn…" autoFocus />
+        <input ref={answerInputRef} value={answer} onChange={(event) => { setAnswer(event.target.value); setRevealed(false); }} onKeyDown={(event) => { if (event.key === "Enter" && answer.trim()) revealAnswer(); }} className={`study-input mt-7 text-lg ${revealed ? matched ? "border-[var(--success)] bg-[rgba(95,118,93,0.08)]" : "border-[var(--danger)] bg-[rgba(141,75,75,0.08)]" : ""}`} placeholder="Câu trả lời của bạn…" aria-invalid={revealed && !matched} autoFocus />
+        <p className="muted mt-2 text-xs">Enter để kiểm tra · <kbd className="font-mono">/</kbd> để quay lại ô nhập.</p>
 
         {!revealed ? (
-          <button type="button" onClick={() => setRevealed(true)} disabled={!answer.trim()} className="btn-primary mt-4 self-start">Lật đáp án</button>
+          <button type="button" onClick={revealAnswer} disabled={!answer.trim()} className="btn-primary mt-4 self-start">Lật đáp án</button>
         ) : (
           <div className="mt-6 border-t border-[var(--border)] pt-6">
             <div className="flex items-start gap-3">
-              <span className={`mt-1 grid size-7 shrink-0 place-items-center rounded-full ${matched ? "bg-[var(--success)] text-[#052016]" : "bg-[var(--warning)] text-[#241a04]"}`}>
+              <span className={`mt-1 grid size-7 shrink-0 place-items-center rounded-full ${matched ? "bg-[var(--success)] text-[#052016]" : "bg-[var(--danger)] text-white"}`}>
                 {matched ? <Check className="size-4" /> : <X className="size-4" />}
               </span>
               <div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <p className="text-3xl font-extrabold">{current.content.title}</p>
-                  <button type="button" onClick={() => speak(current.content.title)} aria-label="Nghe phát âm" className="grid size-9 place-items-center rounded-xl border border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"><Volume2 className="size-4" /></button>
-                </div>
+                <p className="text-3xl font-extrabold">{current.content.title}</p>
+                <PronunciationControls text={current.content.title} compact />
                 <p className="mt-3 font-mono text-sm text-[var(--primary)]">{getPattern(current.content)}</p>
                 {getExample(current.content) && <p className="muted mt-4 leading-7">“{getExample(current.content)}”</p>}
               </div>
@@ -127,11 +205,12 @@ export function ReviewSession({ queue }: { queue: QueueItem[] }) {
             <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {ratingOptions.map((option) => (
                 <button key={option.rating} type="button" onClick={() => rate(option.rating)} disabled={isSaving} className={`rounded-[14px] border bg-[var(--surface)] px-3 py-3 text-left hover:bg-[var(--panel-soft)] ${option.className}`}>
-                  <span className="block font-extrabold">{option.label}</span>
+                  <span className="block font-extrabold"><kbd className="mr-1.5 font-mono">{option.shortcut}</kbd>{option.label}</span>
                   <span className="mt-1 block text-[0.68rem] text-[var(--muted-2)]">{option.hint}</span>
                 </button>
               ))}
             </div>
+            <p className="muted mt-3 text-xs">Enter: Easy · Enter ×2: Hard · phím 1–4: Again → Easy</p>
             {isSaving && <p className="muted mt-3 flex items-center gap-2 text-sm"><Loader2 className="size-4 animate-spin" />Đang lưu lịch ôn…</p>}
             {error && <p className="mt-3 text-sm text-[var(--danger)]">{error}</p>}
           </div>

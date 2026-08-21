@@ -14,9 +14,14 @@ export function queueScore(candidate: QueueCandidate, now: Date) {
   return overdueWeight + weaknessWeight + toeicPriority;
 }
 
-export function buildReviewQueue(candidates: QueueCandidate[], now = new Date(), limit = 30) {
+export function buildReviewQueue(
+  candidates: QueueCandidate[],
+  now = new Date(),
+  limit = 30,
+  options: { includeNotDue?: boolean } = {},
+) {
   const sorted = candidates
-    .filter((candidate) => candidate.nextReviewAt <= now)
+    .filter((candidate) => options.includeNotDue || candidate.nextReviewAt <= now)
     .sort((a, b) => queueScore(b, now) - queueScore(a, now) || a.nextReviewAt.getTime() - b.nextReviewAt.getTime());
 
   const queue: QueueCandidate[] = [];

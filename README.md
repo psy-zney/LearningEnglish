@@ -11,7 +11,7 @@ The product treats phrases, verb patterns, and tense decisions as learning units
 - Node.js 20.9 or newer
 - npm
 - SQLite (used through Prisma/libSQL; no separate SQLite CLI required)
-- Optional: Ollama with `qwen2.5:3b` for legacy vocabulary enrichment
+- Optional: Ollama with `qwen3.5:4b` for legacy vocabulary enrichment
 
 ## Local setup
 
@@ -26,7 +26,7 @@ npm run dev
 
 Open <http://localhost:1002>.
 
-The recommended mode is local-only and single-user. Learning, review, Part 5 grading, and progress do not require login or Ollama. `/login` remains only for editing legacy vocabulary records.
+The recommended mode is local-first and single-user. Read-only learning content and progress work without Ollama. On a public backend, sign in once at `/login`; the backend uses a signed, seven-day HttpOnly cookie for every state-changing request.
 
 ## Production split
 
@@ -51,6 +51,8 @@ APP_DEPLOYMENT_MODE=backend
 NEXT_PUBLIC_API_URL=http://127.0.0.1:1002
 DATABASE_URL=file:dev.db
 ALLOWED_ORIGINS=https://study.zney295.id.vn,http://localhost:1002,http://localhost:3000
+ADMIN_PASSWORD_HASH=<sha256-of-your-password>
+TOKEN_SALT=<at-least-32-random-characters>
 OLLAMA_MODEL=qwen3.5:4b
 OLLAMA_BASE_URL=http://127.0.0.1:11434
 ```
@@ -64,7 +66,7 @@ npm run data:validate
 npm run data:seed
 ```
 
-The canonical starter pack is [src/data/toeic650-source-data.ts](src/data/toeic650-source-data.ts): 40 core verbs, 12 tense families, and 51 workplace phrases. The first-sprint Part 5 pack contains 30 original deterministic questions with option rationales.
+The canonical pack is [src/data/toeic650-source-data.ts](src/data/toeic650-source-data.ts): 70 core verbs, 12 tense families, and 101 workplace phrases. The Part 5 bank contains 100 original deterministic questions with option rationales and rotates short daily sessions across the full bank.
 
 Seeding is idempotent:
 
@@ -108,7 +110,7 @@ To restore, stop the app, copy the chosen backup to a temporary filename, verify
 ## Optional Ollama
 
 ```powershell
-ollama pull qwen2.5:3b
+ollama pull qwen3.5:4b
 ollama serve
 ```
 

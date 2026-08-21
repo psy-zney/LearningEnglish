@@ -1,7 +1,8 @@
 "use client";
 
-import { BookOpen, ChevronRight, Search, Volume2, X } from "lucide-react";
+import { BookOpen, ChevronRight, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { PronunciationControls } from "@/components/pronunciation-controls";
 import type { ContentView } from "@/domain/api-contracts";
 
 const tabs = [
@@ -64,14 +65,6 @@ export function LibraryExplorer({ items }: { items: ContentView[] }) {
 
   const selected = items.find((item) => item.id === selectedId) ?? filtered[0] ?? null;
 
-  function speak(text: string) {
-    if (!("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-US";
-    window.speechSynthesis.speak(utterance);
-  }
-
   return (
     <section className="study-panel overflow-hidden">
       <div className="border-b border-[var(--border)] p-4 md:p-5">
@@ -128,13 +121,13 @@ export function LibraryExplorer({ items }: { items: ContentView[] }) {
         <div className="relative p-5 md:p-7">
           {selected ? (
             <div>
-              <div className="flex items-start justify-between gap-4">
+              <div>
                 <div>
                   <p className="eyebrow">{selected.kind.replace("_", " ")} · {selected.topic ?? "inbox"}</p>
                   <h2 className="mt-3 text-4xl font-extrabold leading-tight tracking-[-0.015em]">{selected.title}</h2>
                   <p className="mt-2 text-lg text-[var(--muted)]">{selected.meaningVi}</p>
+                  <PronunciationControls text={selected.title} />
                 </div>
-                <button type="button" onClick={() => speak(selected.title)} aria-label="Nghe phát âm" className="btn-quiet px-3"><Volume2 className="size-4" /></button>
               </div>
 
               <div className="mt-6 flex flex-wrap gap-2">

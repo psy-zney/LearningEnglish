@@ -2,10 +2,11 @@ import "server-only";
 
 import prisma from "@/lib/prisma";
 import { toLocalDateKey } from "@/lib/date-key";
+import { buildSessionTasks } from "@/lib/daily-plan";
 
 export async function getDailyPlan(now = new Date()) {
   const dateKey = toLocalDateKey(now);
-  const [dueCount, newCount, activity, activities, totalContent, attemptsToday] = await Promise.all([
+  const [dueCount, newCount, activity, activities, totalContent, todayAttempts] = await Promise.all([
     prisma.reviewState.count({ where: { nextReviewAt: { lte: now }, contentItem: { archivedAt: null } } }),
     prisma.contentItem.count({
       where: { archivedAt: null, status: "approved", kind: { in: ["verb", "phrase", "tense"] }, reviewState: null },
@@ -13,7 +14,10 @@ export async function getDailyPlan(now = new Date()) {
     prisma.dailyActivity.findUnique({ where: { activityDate: dateKey } }),
     prisma.dailyActivity.findMany({ orderBy: { activityDate: "desc" }, take: 60 }),
     prisma.contentItem.count({ where: { archivedAt: null, status: "approved", kind: { in: ["verb", "phrase", "tense"] } } }),
-    prisma.attempt.count({ where: { createdAt: { gte: new Date(`${dateKey}T00:00:00+07:00`) } } }),
+    prisma.attempt.findMany({
+      where: { createdAt: { gte: new Date(`${dateKey}T00:00:00+07:00`) } },
+      select: { id: true, mode: true, contentItemId: true, exerciseId: true, metadataJson: true },
+    }),
   ]);
 
   const activeDates = new Set(
@@ -36,14 +40,23 @@ export async function getDailyPlan(now = new Date()) {
     cursor.setDate(cursor.getDate() - 1);
   }
 
-  const reviewGoal = Math.min(20, dueCount);
-  const learnGoal = dueCount > 50 ? 0 : Math.min(6, newCount);
-  const completed = {
-    review: (activity?.reviewsCompleted ?? 0) >= reviewGoal,
-    learn: learnGoal === 0 || (activity?.itemsLearned ?? 0) >= learnGoal,
-    practice: (activity?.practiceAnswered ?? 0) >= 10,
-    mission: activity?.missionCompleted ?? false,
-  };
+  const recoveryMode = dueCount > 50;
+  const attemptEvidence = todayAttempts.map((attempt) => {
+    let drillId = "";
+    try {
+      const metadata = attempt.metadataJson ? JSON.parse(attempt.metadataJson) as Record<string, unknown> : null;
+      drillId = typeof metadata?.drillId === "string" ? metadata.drillId : "";
+    } catch {
+      // Older attempt metadata remains valid and falls back to its stored relation.
+    }
+    return {
+      mode: attempt.mode,
+      identity: drillId || attempt.exerciseId || attempt.contentItemId || attempt.id,
+    };
+  });
+  const distinctReviews = new Set(
+    attemptEvidence.filter((attempt) => attempt.mode === "review").map((attempt) => attempt.identity),
+  ).size;
 
   return {
     dateKey,
@@ -51,16 +64,19 @@ export async function getDailyPlan(now = new Date()) {
     newCount,
     totalContent,
     streak,
-    recoveryMode: dueCount > 50,
+    recoveryMode,
     activity,
-    attemptsToday,
-    tasks: [
-      { id: "review", title: "Review due", detail: `${reviewGoal} lượt · active recall`, minutes: 15, href: "/review", completed: completed.review, disabled: reviewGoal === 0 },
-      { id: "learn", title: "Learn patterns", detail: learnGoal > 0 ? `${learnGoal} mục mới · verb / phrase / tense` : "Tạm dừng khi backlog cao", minutes: 12, href: "/learn", completed: completed.learn, disabled: learnGoal === 0 },
-      { id: "practice", title: "TOEIC Part 5", detail: "10 câu · chấm deterministic", minutes: 18, href: "/practice", completed: completed.practice, disabled: false },
-      { id: "listen", title: "Listening & shadowing", detail: "Prototype audio · phase tiếp theo", minutes: 10, href: "/practice", completed: false, disabled: true },
-      { id: "mission", title: "Live with English", detail: "Viết 3 việc hôm nay bằng cụm đã học", minutes: 5, href: "/#mission", completed: completed.mission, disabled: false },
-    ],
+    attemptsToday: todayAttempts.length,
+    missionCompleted: activity?.missionCompleted ?? false,
+    tasks: buildSessionTasks({
+      dueCount,
+      newCount,
+      recoveryMode,
+      reviewsCompleted: distinctReviews,
+      itemsLearned: activity?.itemsLearned ?? 0,
+      attemptModes: todayAttempts.map((attempt) => attempt.mode),
+      attemptEvidence,
+    }),
   };
 }
 

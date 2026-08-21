@@ -17,7 +17,16 @@ test("normalizes the API base URL and joins paths without duplicate slashes", ()
 });
 
 test("rejects a missing, malformed, or non-http API base URL with a structured config error", () => {
-  for (const value of [undefined, "  ", "not-a-url", "file:dev.db", "https://user:pass@example.com"]) {
+  const originalBaseUrl = process.env.NEXT_PUBLIC_API_URL;
+  process.env.NEXT_PUBLIC_API_URL = "";
+  assert.throws(
+    () => normalizeApiBaseUrl(),
+    (error: unknown) => error instanceof ApiClientError && error.code === "CONFIG",
+  );
+  if (originalBaseUrl === undefined) delete process.env.NEXT_PUBLIC_API_URL;
+  else process.env.NEXT_PUBLIC_API_URL = originalBaseUrl;
+
+  for (const value of ["  ", "not-a-url", "file:dev.db", "https://user:pass@example.com"]) {
     assert.throws(
       () => normalizeApiBaseUrl(value),
       (error: unknown) => error instanceof ApiClientError && error.code === "CONFIG",
@@ -39,6 +48,17 @@ test("sends requests to the absolute backend URL and returns JSON", async () => 
 
   assert.equal(requestedUrl, `${backendUrl}/api/dashboard`);
   assert.deepEqual(result, { ok: true });
+});
+
+test("includes the backend session cookie on browser requests", async () => {
+  let sentCredentials: RequestCredentials | undefined;
+  const fetcher: typeof fetch = async (_input, init) => {
+    sentCredentials = init?.credentials;
+    return Response.json({ ok: true });
+  };
+
+  await apiRequest("/api/dashboard", { baseUrl: backendUrl, fetcher });
+  assert.equal(sentCredentials, "include");
 });
 
 test("sets JSON request headers for a body while preserving custom headers", async () => {

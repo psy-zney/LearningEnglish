@@ -1,11 +1,13 @@
 "use client";
 
-import { ArrowRight, Check, Loader2, RotateCcw, Volume2 } from "lucide-react";
+import { ArrowRight, Check, Loader2, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { PronunciationControls } from "@/components/pronunciation-controls";
 import type { ContentView } from "@/domain/api-contracts";
 import { apiRequest } from "@/lib/api-client";
 import { isAcceptedAnswer } from "@/lib/answer-normalizer";
+import { playAnswerFeedback } from "@/lib/feedback-sound";
 
 type Phase = "pattern" | "recall" | "summary";
 
@@ -16,6 +18,7 @@ function stringArray(value: unknown) {
 function getPattern(item: ContentView) {
   if (item.kind === "verb") return stringArray(item.detail.patterns)[0] ?? "Verb + workplace context";
   if (item.kind === "phrase") return typeof item.detail.pattern === "string" ? item.detail.pattern : "Learn as one complete chunk";
+  if (item.kind === "legacy_word") return "Headword ↔ nghĩa đã lưu · kiểm tra chủ động";
   const formula = item.detail.formula as Record<string, unknown> | undefined;
   return typeof formula?.affirmative === "string" ? formula.affirmative : "Time anchor → aspect → verb form";
 }
@@ -44,21 +47,27 @@ export function LearnSession({ items }: { items: ContentView[] }) {
   const [isCorrect, setIsCorrect] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const answerInputRef = useRef<HTMLInputElement>(null);
   const current = items[index];
   const example = current ? getExample(current) : { en: "", vi: "" };
 
-  function speak(text: string) {
-    if (!("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-US";
-    window.speechSynthesis.speak(utterance);
-  }
+  useEffect(() => {
+    if (phase !== "recall") return;
+    answerInputRef.current?.focus();
+    const focusInput = (event: KeyboardEvent) => {
+      if (event.key !== "/" || event.ctrlKey || event.altKey || event.metaKey) return;
+      event.preventDefault();
+      answerInputRef.current?.focus();
+    };
+    window.addEventListener("keydown", focusInput);
+    return () => window.removeEventListener("keydown", focusInput);
+  }, [index, phase]);
 
   function checkRecall() {
-    const correct = isAcceptedAnswer(answer, [current.title, current.meaningVi]);
+    const correct = isAcceptedAnswer(answer, [current.title]);
     setIsCorrect(correct);
     setChecked(true);
+    playAnswerFeedback(correct);
   }
 
   function nextItem() {
@@ -134,7 +143,7 @@ export function LearnSession({ items }: { items: ContentView[] }) {
               <p className="eyebrow">Pattern map</p>
               <h2 className="mt-4 text-4xl font-extrabold leading-tight tracking-[-0.015em] md:text-5xl">{current.title}</h2>
               <p className="mt-3 text-lg text-[var(--muted)]">{current.meaningVi}</p>
-              <button type="button" onClick={() => speak(current.title)} className="btn-quiet mt-5"><Volume2 className="size-4" />Nghe cụm</button>
+              <PronunciationControls text={current.title} />
             </div>
             <div className="mt-8 rounded-2xl border border-[var(--primary)]/25 bg-[rgba(63,63,59,0.045)] p-4">
               <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--primary)]">Rule</p>
@@ -144,8 +153,14 @@ export function LearnSession({ items }: { items: ContentView[] }) {
           </div>
           <div className="flex flex-col justify-center p-6 md:p-8">
             <p className="eyebrow">Context before translation</p>
-            <blockquote className="mt-5 text-2xl font-bold leading-9">“{example.en}”</blockquote>
-            <p className="muted mt-4 leading-7">{example.vi}</p>
+            {example.en ? (
+              <>
+                <blockquote className="mt-5 text-2xl font-bold leading-9">“{example.en}”</blockquote>
+                <p className="muted mt-4 leading-7">{example.vi}</p>
+              </>
+            ) : (
+              <p className="muted mt-5 leading-7">Mục legacy chưa có câu ví dụ đã duyệt. Hãy tập trung vào headword và nghĩa chính xác.</p>
+            )}
             <div className="mt-7 flex flex-wrap gap-2">
               {current.toeicParts.map((part) => <span key={part} className="status-pill">Part {part}</span>)}
               {current.cefr && <span className="status-pill">{current.cefr}</span>}
@@ -161,11 +176,12 @@ export function LearnSession({ items }: { items: ContentView[] }) {
           <p className="eyebrow">Active recall</p>
           <h2 className="mt-3 text-2xl font-extrabold">{current.kind === "tense" ? `Tên tiếng Anh của “${current.meaningVi}” là gì?` : `Cụm tiếng Anh cho “${current.meaningVi}” là gì?`}</h2>
           <p className="muted mt-2">Gõ trước khi xem đáp án. Không cần hoàn hảo về viết hoa.</p>
-          <input value={answer} onChange={(event) => { setAnswer(event.target.value); setChecked(false); }} onKeyDown={(event) => { if (event.key === "Enter" && answer.trim()) checkRecall(); }} className="study-input mt-6 text-lg" placeholder="Nhập câu trả lời…" autoFocus />
+          <input ref={answerInputRef} value={answer} onChange={(event) => { setAnswer(event.target.value); setChecked(false); }} onKeyDown={(event) => { if (event.key === "Enter" && answer.trim()) checkRecall(); }} className={`study-input mt-6 text-lg ${checked ? isCorrect ? "border-[var(--success)] bg-[rgba(95,118,93,0.08)]" : "border-[var(--danger)] bg-[rgba(141,75,75,0.08)]" : ""}`} placeholder="Nhập câu trả lời…" aria-invalid={checked && !isCorrect} autoFocus />
+          <p className="muted mt-2 text-xs">Nhấn <kbd className="font-mono">/</kbd> để quay lại ô nhập.</p>
           {!checked ? (
             <button type="button" onClick={checkRecall} disabled={!answer.trim()} className="btn-primary mt-4 self-start">Kiểm tra</button>
           ) : (
-            <div className={`mt-5 rounded-2xl border p-5 ${isCorrect ? "border-[var(--success)]/40 bg-[rgba(95,118,93,0.07)]" : "border-[var(--warning)]/40 bg-[rgba(146,112,58,0.07)]"}`}>
+            <div className={`mt-5 rounded-2xl border p-5 ${isCorrect ? "border-[var(--success)]/40 bg-[rgba(95,118,93,0.07)]" : "border-[var(--danger)]/40 bg-[rgba(141,75,75,0.07)]"}`}>
               <p className="font-extrabold">{isCorrect ? "Đúng — đã nhớ chủ động." : "Chưa khớp. Ghi lại cả cụm:"}</p>
               <p className="mt-2 text-2xl font-extrabold">{current.title}</p>
               <p className="muted mt-2 font-mono text-sm">{getPattern(current)}</p>

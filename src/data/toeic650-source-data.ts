@@ -1,10 +1,12 @@
 /**
- * TOEIC 650 starter source of truth.
+ * TOEIC 650 source of truth.
  *
  * Intended repository path: src/data/toeic650-source-data.ts
  * This file is deterministic content. AI may explain or create extra practice,
  * but it must not silently overwrite these approved answers.
  */
+
+import { expandedPhrases, expandedVerbs } from "./toeic650-expansion-data.ts";
 
 export type ToeicPart = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export type CefrLevel = "A2" | "B1" | "B2";
@@ -123,7 +125,7 @@ const p = (
   priority: ContentPriority = 1,
 ): PhraseItem => ({ id, phrase, meaningVi, pattern, examples: [example], topic, toeicParts, cefr, priority });
 
-export const verbs: VerbItem[] = [
+const starterVerbs: VerbItem[] = [
   v("verb-attend", "attend", "attended", "attended", "attends", "attending", ["tham dự"], ["attend + event/meeting"], ["attend a meeting", "attend a conference"], { en: "All department heads must attend the meeting.", vi: "Tất cả trưởng bộ phận phải tham dự cuộc họp." }, "meetings", [3, 5, 6]),
   v("verb-arrange", "arrange", "arranged", "arranged", "arranges", "arranging", ["sắp xếp", "thu xếp"], ["arrange + noun", "arrange to + V", "arrange for + person + to V"], ["arrange transportation", "arrange an interview"], { en: "We arranged for a technician to inspect the printer.", vi: "Chúng tôi đã thu xếp để kỹ thuật viên kiểm tra máy in." }, "office", [3, 4, 5, 6]),
   v("verb-schedule", "schedule", "scheduled", "scheduled", "schedules", "scheduling", ["lên lịch"], ["schedule + noun", "be scheduled to + V"], ["schedule an appointment", "schedule a delivery"], { en: "The interview is scheduled to begin at nine.", vi: "Buổi phỏng vấn được lên lịch bắt đầu lúc chín giờ." }, "meetings", [2, 3, 4, 5, 6]),
@@ -349,7 +351,7 @@ export const tenses: TenseItem[] = [
   },
 ];
 
-export const phrases: PhraseItem[] = [
+const starterPhrases: PhraseItem[] = [
   p("phrase-responsible-for", "be responsible for", "chịu trách nhiệm về", { en: "Ms. Lee is responsible for training new staff.", vi: "Cô Lee chịu trách nhiệm đào tạo nhân viên mới." }, "human-resources", [3, 4, 5, 6, 7], "be responsible for + noun/V-ing"),
   p("phrase-in-charge-of", "be in charge of", "phụ trách", { en: "Who is in charge of the marketing campaign?", vi: "Ai phụ trách chiến dịch tiếp thị?" }, "marketing", [2, 3, 5, 6], "be in charge of + noun/V-ing"),
   p("phrase-look-forward-to", "look forward to", "mong chờ", { en: "We look forward to meeting you next week.", vi: "Chúng tôi mong được gặp bạn vào tuần tới." }, "office", [3, 5, 6, 7], "look forward to + noun/V-ing"),
@@ -403,9 +405,12 @@ export const phrases: PhraseItem[] = [
   p("phrase-job-opening", "job opening", "vị trí đang tuyển", { en: "The company posted several job openings on its website.", vi: "Công ty đã đăng một số vị trí tuyển dụng trên trang web." }, "human-resources", [3, 4, 5, 6, 7]),
 ];
 
+export const verbs: VerbItem[] = [...starterVerbs, ...expandedVerbs];
+export const phrases: PhraseItem[] = [...starterPhrases, ...expandedPhrases];
+
 export const toeic650SourceData = {
   schemaVersion: 1,
-  contentVersion: "2026.08.20-starter",
+  contentVersion: "2026.08.22-expanded",
   targetScore: 650,
   locale: "vi-VN",
   studyPrinciples: [

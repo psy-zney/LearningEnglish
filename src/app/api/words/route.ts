@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { validateWordMeaning } from '@/lib/word-ai';
-import { verifyToken } from '@/lib/auth';
+import { isAuthorizedRequest } from '@/lib/auth';
 
 export async function GET() {
   try {
@@ -24,9 +24,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     // Check auth
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.split(' ')[1] || '';
-    if (!verifyToken(token)) {
+    if (!isAuthorizedRequest(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

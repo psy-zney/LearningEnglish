@@ -1,4 +1,6 @@
 import type { ExerciseOption } from "@/domain/exercise";
+import type { DrillView } from "@/domain/drill";
+import type { DrillSession } from "@/lib/drill-session";
 
 export type ContentView = {
   id: string;
@@ -27,6 +29,7 @@ export type DailyPlan = {
   streak: number;
   recoveryMode: boolean;
   attemptsToday: number;
+  missionCompleted: boolean;
   tasks: Array<{
     id: string;
     title: string;
@@ -48,6 +51,12 @@ export type ProgressSummary = {
     accuracy: number | null;
     medianSeconds: number | null;
   };
+  drills: {
+    answered: number;
+    accuracy: number | null;
+    medianSeconds: number | null;
+    byMode: Array<{ mode: string; answered: number; accuracy: number | null; medianSeconds: number | null }>;
+  };
   topErrors: Array<{ key: string; label: string; count: number }>;
   activities: Array<{ date: string; recalls: number; practice: number; learned: number }>;
 };
@@ -66,4 +75,12 @@ export type DashboardResponse = { plan: DailyPlan; progress: ProgressSummary };
 export type ContentListResponse = { items: ContentView[] };
 export type ReviewQueueResponse = { items: ReviewQueueItem[] };
 export type PracticeExercisesResponse = { exercises: PracticeExerciseView[] };
+export type DrillSessionResponse = { session: DrillSession; dateKey: string; drills: DrillView[] };
+export type DrillAnswerResponse = {
+  correct: boolean;
+  correctAnswer: string;
+  errorCategory: string | null;
+  explanation: string;
+  mode: string;
+};
 export type ProgressResponse = { progress: ProgressSummary };

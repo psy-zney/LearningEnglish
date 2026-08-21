@@ -5,7 +5,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const exerciseId = typeof body.exerciseId === "string" ? body.exerciseId : "";
     const selectedOptionId = typeof body.selectedOptionId === "string" ? body.selectedOptionId : "";
-    const responseTimeMs = typeof body.responseTimeMs === "number" ? body.responseTimeMs : undefined;
+    const responseTimeMs = typeof body.responseTimeMs === "number" && Number.isFinite(body.responseTimeMs)
+      ? Math.min(3_600_000, Math.max(0, Math.round(body.responseTimeMs)))
+      : undefined;
     if (!exerciseId || !selectedOptionId) {
       return Response.json({ error: "Câu trả lời không hợp lệ." }, { status: 400 });
     }

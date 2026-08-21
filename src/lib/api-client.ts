@@ -86,6 +86,7 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   try {
     response = await fetcher(url, {
       cache: "no-store",
+      credentials: "include",
       ...requestInit,
       headers,
       signal: controller.signal,
