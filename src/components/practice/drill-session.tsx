@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, Clock3, Loader2, Target, X } from "lucide-react";
+import { ArrowRight, Check, Clock3, Loader2, RotateCcw, Sparkles, Target, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DrillView } from "@/domain/drill";
@@ -27,10 +27,12 @@ export function DrillSession({
   drills,
   dateKey,
   session,
+  round = 0,
 }: {
   drills: DrillView[];
   dateKey: string;
   session: DrillSessionName;
+  round?: number;
 }) {
   const [index, setIndex] = useState(0);
   const [answer, setAnswer] = useState("");
@@ -45,6 +47,15 @@ export function DrillSession({
   const current = drills[index];
   const finished = index >= drills.length;
 
+  const restart = () => {
+    setIndex(0);
+    setAnswer("");
+    setFeedback(null);
+    setResults([]);
+    setError("");
+    startedAtRef.current = Date.now();
+  };
+
   useEffect(() => {
     const handleAuthSuccess = () => setError("");
     window.addEventListener("auth:success", handleAuthSuccess);
@@ -55,7 +66,7 @@ export function DrillSession({
     if (finished || feedback) return;
     startedAtRef.current = Date.now();
     setElapsedSeconds(0);
-    if (current.inputKind === "text") inputRef.current?.focus();
+    if (current?.inputKind === "text") inputRef.current?.focus();
     const timer = setInterval(() => {
       setElapsedSeconds(Math.floor((Date.now() - startedAtRef.current) / 1_000));
     }, 500);
@@ -105,11 +116,11 @@ export function DrillSession({
       const action = getDrillKeyboardAction(event.key, Boolean(feedback), Boolean(answer.trim()));
       if (!action) return;
       if (action.type === "focus") {
-        if (current.inputKind !== "text" || document.activeElement === inputRef.current) return;
+        if (current?.inputKind !== "text" || document.activeElement === inputRef.current) return;
         event.preventDefault();
         inputRef.current?.focus();
       } else if (action.type === "select") {
-        if (current.inputKind !== "choice") return;
+        if (current?.inputKind !== "choice") return;
         const option = current.options?.[action.index];
         if (!option) return;
         event.preventDefault();
@@ -128,16 +139,49 @@ export function DrillSession({
 
   if (finished) {
     const correct = results.filter(Boolean).length;
+    const isZeroError = correct === results.length && results.length > 0;
+    const nextRoundHref = `/practice?session=${session}&round=${round + 1}`;
+
     return (
       <section className="study-panel grid min-h-[440px] place-items-center p-7 text-center">
         <div className="max-w-lg">
-          <span className="mx-auto grid size-14 place-items-center rounded-full bg-[var(--success)] text-[#052016]"><Target className="size-7" /></span>
-          <p className="eyebrow mt-5">Phiên luyện hoàn tất</p>
+          <span className={`mx-auto grid size-14 place-items-center rounded-full ${isZeroError ? "bg-[var(--success)] text-[#052016] ring-4 ring-[var(--success)]/20" : "bg-[var(--primary)] text-[var(--primary-ink)]"}`}>
+            {isZeroError ? <Sparkles className="size-7 animate-pulse" /> : <Target className="size-7" />}
+          </span>
+          <p className="eyebrow mt-5">
+            {isZeroError ? "Hoàn thành xuất sắc · 0 Lỗi" : "Phiên luyện hoàn tất"}
+          </p>
           <h2 className="mt-2 text-5xl font-extrabold">{correct}/{results.length}</h2>
-          <p className="muted mt-3">Mỗi câu đã được ghi cùng loại bài và thời gian phản hồi.</p>
+          <p className="muted mt-3">
+            {isZeroError
+              ? "Tuyệt đối chính xác! Hệ thống đã tự động xoay và mở khóa bộ câu hỏi / từ vựng mới tiếp theo."
+              : "Mỗi câu đã được ghi cùng loại bài và thời gian phản hồi."}
+          </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link href="/progress" className="btn-primary">Xem tiến bộ</Link>
-            <Link href="/" className="btn-quiet">Về Session Rail</Link>
+            {isZeroError ? (
+              <>
+                <Link href={nextRoundHref} className="btn-primary flex items-center gap-2">
+                  <span>Luyện bộ từ mới tiếp theo</span>
+                  <ArrowRight className="size-4" />
+                </Link>
+                <button type="button" onClick={restart} className="btn-quiet flex items-center gap-2">
+                  <RotateCcw className="size-4" />
+                  <span>Làm lại bộ này</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button type="button" onClick={restart} className="btn-primary flex items-center gap-2">
+                  <RotateCcw className="size-4" />
+                  <span>Luyện lại (Mục tiêu 0 lỗi)</span>
+                </button>
+                <Link href={nextRoundHref} className="btn-quiet flex items-center gap-2">
+                  <span>Chuyển bộ từ mới</span>
+                  <ArrowRight className="size-4" />
+                </Link>
+              </>
+            )}
+            <Link href="/progress" className="btn-quiet">Xem tiến bộ</Link>
           </div>
         </div>
       </section>

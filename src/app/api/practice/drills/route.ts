@@ -8,7 +8,8 @@ export async function GET(request: Request) {
     if (!session) return Response.json({ error: "Phiên luyện tập không hợp lệ." }, { status: 400 });
     const requested = Number(searchParams.get("limit") ?? 8);
     const limit = Number.isFinite(requested) ? Math.min(24, Math.max(1, Math.trunc(requested))) : 8;
-    return Response.json(await getDrills(session, limit));
+    const round = Math.max(0, parseInt(searchParams.get("round") ?? "0", 10) || 0);
+    return Response.json(await getDrills(session, limit, round));
   } catch (error) {
     console.error("Practice drills error:", error);
     return Response.json({ error: "Không thể tải bài luyện tập." }, { status: 500 });

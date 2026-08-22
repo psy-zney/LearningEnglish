@@ -250,8 +250,9 @@ function buildOne(
   mode: DrillMode,
   dateKey: string,
   optionCount: number,
+  round = 0,
 ): InternalDrill | null {
-  const seed = `${dateKey}:${mode}:${item.id}`;
+  const seed = round > 0 ? `${dateKey}:r${round}:${mode}:${item.id}` : `${dateKey}:${mode}:${item.id}`;
   let prompt = "";
   let correctAnswer = "";
   let acceptedAnswers: string[] = [];
@@ -310,13 +311,15 @@ function buildInternal(contents: readonly DrillContent[], options: DrillBuildOpt
   const clean = cleanContent(contents);
   const limitPerMode = Math.min(50, Math.max(1, Math.trunc(options.limitPerMode ?? 5)));
   const optionCount = Math.min(4, Math.max(2, Math.trunc(options.optionCount ?? 4)));
+  const round = Math.max(0, Math.trunc(options.round ?? 0));
   const output: InternalDrill[] = [];
 
   for (const mode of normalizeModes(options.modes)) {
-    const candidates = shuffle(clean, `${options.dateKey}:${mode}:targets`);
+    const seed = round > 0 ? `${options.dateKey}:r${round}:${mode}:targets` : `${options.dateKey}:${mode}:targets`;
+    const candidates = shuffle(clean, seed);
     let modeCount = 0;
     for (const item of candidates) {
-      const drill = buildOne(item, clean, mode, options.dateKey, optionCount);
+      const drill = buildOne(item, clean, mode, options.dateKey, optionCount, round);
       if (!drill) continue;
       output.push(drill);
       modeCount += 1;
@@ -342,7 +345,13 @@ export function gradeDailyDrill(contents: readonly DrillContent[], input: GradeD
     return { status: "invalid", code: "invalid_answer" };
   }
 
-  const drill = buildInternal(contents, input).find((candidate) => candidate.view.id === input.drillId);
+  let drill = buildInternal(contents, input).find((candidate) => candidate.view.id === input.drillId);
+  if (!drill && input.round === undefined) {
+    for (let r = 1; r <= 10; r += 1) {
+      drill = buildInternal(contents, { ...input, round: r }).find((candidate) => candidate.view.id === input.drillId);
+      if (drill) break;
+    }
+  }
   if (!drill) return { status: "invalid", code: "invalid_drill" };
 
   const normalized = normalizeAnswer(input.answer);

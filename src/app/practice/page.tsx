@@ -22,10 +22,14 @@ const sessionLinks = [
 export default async function PracticePage({
   searchParams,
 }: {
-  searchParams: Promise<{ session?: string | string[] }>;
+  searchParams: Promise<{ session?: string | string[]; round?: string | string[] }>;
 }) {
-  const rawSession = (await searchParams).session;
+  const params = await searchParams;
+  const rawSession = params.session;
+  const rawRound = params.round;
   const sessionValue = Array.isArray(rawSession) ? rawSession[0] : rawSession;
+  const roundValue = Array.isArray(rawRound) ? rawRound[0] : rawRound;
+  const round = Math.max(0, parseInt(roundValue ?? "0", 10) || 0);
   const drillSession = parseDrillSession(sessionValue);
   const isPart5 = !drillSession;
   let exercises: PracticeExerciseView[] = [];
@@ -33,13 +37,13 @@ export default async function PracticePage({
 
   try {
     if (drillSession) {
-      generated = await apiRequest<DrillSessionResponse>(`/api/practice/drills?session=${drillSession}&limit=8`);
+      generated = await apiRequest<DrillSessionResponse>(`/api/practice/drills?session=${drillSession}&limit=8&round=${round}`);
     } else {
-      ({ exercises } = await apiRequest<PracticeExercisesResponse>("/api/practice/exercises?limit=10"));
+      ({ exercises } = await apiRequest<PracticeExercisesResponse>(`/api/practice/exercises?limit=10&round=${round}`));
     }
   } catch (error) {
     console.error("Practice backend request failed:", error);
-    const retryHref = drillSession ? `/practice?session=${drillSession}` : "/practice?session=toeic_part_5";
+    const retryHref = drillSession ? `/practice?session=${drillSession}&round=${round}` : `/practice?session=toeic_part_5&round=${round}`;
     return <BackendUnavailable title="Chưa tải được phiên luyện tập" retryHref={retryHref} />;
   }
 
@@ -59,11 +63,12 @@ export default async function PracticePage({
     <div className="study-page space-y-6">
       <header className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <p className="eyebrow">Practice · {drillSession ? "Core drills" : "TOEIC-style Part 5"}</p>
+          <p className="eyebrow">Practice · {drillSession ? "Core drills" : "TOEIC-style Part 5"}{round > 0 ? ` · Vòng ${round + 1}` : ""}</p>
           <h1 className="mt-2 text-3xl font-extrabold leading-tight tracking-[-0.015em] md:text-4xl">{title}</h1>
           <p className="muted mt-3 max-w-2xl leading-7">{description}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {round > 0 && <span className="status-pill font-bold text-[var(--primary)]">Vòng {round + 1}</span>}
           <span className="status-pill"><Layers3 className="size-3.5" />{itemCount} câu</span>
           <span className="status-pill text-[var(--success)]"><ShieldCheck className="size-3.5" />Deterministic</span>
         </div>
@@ -77,9 +82,9 @@ export default async function PracticePage({
       </nav>
 
       {generated && generated.drills.length > 0 ? (
-        <GeneratedDrillSession drills={generated.drills} dateKey={generated.dateKey} session={generated.session} />
+        <GeneratedDrillSession drills={generated.drills} dateKey={generated.dateKey} session={generated.session} round={round} />
       ) : isPart5 && exercises.length > 0 ? (
-        <PracticeSession exercises={exercises} />
+        <PracticeSession exercises={exercises} round={round} />
       ) : (
         <section className="study-panel grid min-h-80 place-items-center p-8 text-center">
           <div>

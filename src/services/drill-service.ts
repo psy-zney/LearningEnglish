@@ -63,13 +63,13 @@ function explanationFor(item: Awaited<ReturnType<typeof getApprovedContent>>[num
   return `${answer} · ${item.meaningVi}`;
 }
 
-export async function getDrills(session: DrillSession, limit = 8, now = new Date()) {
+export async function getDrills(session: DrillSession, limit = 8, round = 0, now = new Date()) {
   const dateKey = toLocalDateKey(now);
   const content = await getApprovedContent();
   return {
     session,
     dateKey,
-    drills: buildDrillSession(content, session, dateKey, limit),
+    drills: buildDrillSession(content, session, dateKey, limit, round),
   };
 }
 

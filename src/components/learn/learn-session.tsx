@@ -103,7 +103,7 @@ export function LearnSession({ items }: { items: ContentView[] }) {
     setToeicChecked(false);
   }
 
-  async function finish() {
+  async function finish(goToLearn = false) {
     setIsSaving(true);
     setSaveError("");
     try {
@@ -111,8 +111,12 @@ export function LearnSession({ items }: { items: ContentView[] }) {
         method: "POST",
         body: JSON.stringify({ contentItemIds: items.map((item) => item.id) }),
       });
-      router.push("/review");
-      router.refresh();
+      if (goToLearn) {
+        window.location.href = "/learn";
+      } else {
+        router.push("/review");
+        router.refresh();
+      }
       return;
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Không thể hoàn tất phiên học.");
@@ -136,10 +140,16 @@ export function LearnSession({ items }: { items: ContentView[] }) {
             </div>
           ))}
         </div>
-        <button type="button" onClick={finish} disabled={isSaving} className="btn-primary mt-6 w-full sm:w-auto">
-          {isSaving ? <Loader2 className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
-          Đưa vào Review ngay
-        </button>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button type="button" onClick={() => finish(false)} disabled={isSaving} className="btn-primary w-full sm:w-auto flex items-center justify-center gap-2">
+            {isSaving ? <Loader2 className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
+            Đưa vào Review ngay
+          </button>
+          <button type="button" onClick={() => finish(true)} disabled={isSaving} className="btn-quiet w-full sm:w-auto flex items-center justify-center gap-2">
+            <span>Học tiếp 6 mục mới</span>
+            <ArrowRight className="size-4" />
+          </button>
+        </div>
         {saveError && (
           <div className="mt-3 flex items-center gap-2 text-sm text-[var(--danger)]">
             <span>{saveError}</span>

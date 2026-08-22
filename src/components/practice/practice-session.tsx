@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, Clock3, Loader2, Target, X } from "lucide-react";
+import { ArrowRight, Check, Clock3, Loader2, RotateCcw, Sparkles, Target, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PracticeExerciseView } from "@/domain/api-contracts";
@@ -16,7 +16,7 @@ type AnswerFeedback = {
   optionRationales: Record<string, string>;
 };
 
-export function PracticeSession({ exercises }: { exercises: PracticeExerciseView[] }) {
+export function PracticeSession({ exercises, round = 0 }: { exercises: PracticeExerciseView[]; round?: number }) {
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState("");
   const [feedback, setFeedback] = useState<AnswerFeedback | null>(null);
@@ -28,6 +28,15 @@ export function PracticeSession({ exercises }: { exercises: PracticeExerciseView
   const submittingRef = useRef(false);
   const current = exercises[index];
   const finished = index >= exercises.length;
+
+  const restart = () => {
+    setIndex(0);
+    setSelected("");
+    setFeedback(null);
+    setResults([]);
+    setError("");
+    startedAtRef.current = Date.now();
+  };
 
   useEffect(() => {
     const handleAuthSuccess = () => setError("");
@@ -104,22 +113,59 @@ export function PracticeSession({ exercises }: { exercises: PracticeExerciseView
 
   if (finished) {
     const correct = results.filter((result) => result.correct).length;
+    const isZeroError = correct === results.length && results.length > 0;
     const errorCounts = new Map<string, number>();
     for (const result of results) {
       if (result.errorCategory) errorCounts.set(result.errorCategory, (errorCounts.get(result.errorCategory) ?? 0) + 1);
     }
     const topError = [...errorCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+    const nextRoundHref = `/practice?session=toeic_part_5&round=${round + 1}`;
+
     return (
       <section className="study-panel grid min-h-[460px] place-items-center p-7 text-center">
         <div className="max-w-lg">
-          <span className="mx-auto grid size-14 place-items-center rounded-full bg-[var(--primary)] text-[var(--primary-ink)]"><Target className="size-7" /></span>
-          <p className="eyebrow mt-5">Mini drill hoàn tất</p>
+          <span className={`mx-auto grid size-14 place-items-center rounded-full ${isZeroError ? "bg-[var(--success)] text-[#052016] ring-4 ring-[var(--success)]/20" : "bg-[var(--primary)] text-[var(--primary-ink)]"}`}>
+            {isZeroError ? <Sparkles className="size-7 animate-pulse" /> : <Target className="size-7" />}
+          </span>
+          <p className="eyebrow mt-5">
+            {isZeroError ? "Hoàn thành xuất sắc · 0 Lỗi" : "Mini drill hoàn tất"}
+          </p>
           <h2 className="mt-2 text-5xl font-extrabold tracking-[-0.015em]">{correct}/{results.length}</h2>
-          <p className="muted mt-3">Đây là accuracy của Part 5 drill, không phải điểm TOEIC ước tính.</p>
-          {topError && <p className="mt-5 rounded-2xl border border-[var(--warning)]/35 bg-[rgba(146,112,58,0.07)] p-4 text-sm">Focus tiếp theo: <strong>{topError[0].replaceAll("_", " ")}</strong> · {topError[1]} lỗi.</p>}
+          <p className="muted mt-3">
+            {isZeroError
+              ? "Tuyệt đối không có lỗi sai! Hệ thống đã tự động xoay và mở khóa 10 câu Part 5 tiếp theo."
+              : "Đây là accuracy của Part 5 drill, không phải điểm TOEIC ước tính."}
+          </p>
+          {topError && !isZeroError && (
+            <p className="mt-5 rounded-2xl border border-[var(--warning)]/35 bg-[rgba(146,112,58,0.07)] p-4 text-sm">
+              Focus tiếp theo: <strong>{topError[0].replaceAll("_", " ")}</strong> · {topError[1]} lỗi.
+            </p>
+          )}
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link href="/progress" className="btn-primary">Xem bằng chứng tiến bộ</Link>
-            <Link href="/" className="btn-quiet">Về Today</Link>
+            {isZeroError ? (
+              <>
+                <Link href={nextRoundHref} className="btn-primary flex items-center gap-2">
+                  <span>Luyện 10 câu mới tiếp theo</span>
+                  <ArrowRight className="size-4" />
+                </Link>
+                <button type="button" onClick={restart} className="btn-quiet flex items-center gap-2">
+                  <RotateCcw className="size-4" />
+                  <span>Làm lại bộ này</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button type="button" onClick={restart} className="btn-primary flex items-center gap-2">
+                  <RotateCcw className="size-4" />
+                  <span>Luyện lại (Mục tiêu 0 lỗi)</span>
+                </button>
+                <Link href={nextRoundHref} className="btn-quiet flex items-center gap-2">
+                  <span>Chuyển 10 câu mới</span>
+                  <ArrowRight className="size-4" />
+                </Link>
+              </>
+            )}
+            <Link href="/progress" className="btn-quiet">Xem tiến bộ</Link>
           </div>
         </div>
       </section>

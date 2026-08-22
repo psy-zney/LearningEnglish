@@ -24,11 +24,12 @@ export function buildDrillSession(
   session: DrillSession,
   dateKey: string,
   requestedLimit = 8,
+  round = 0,
 ): DrillView[] {
   const limit = Math.min(24, Math.max(1, Math.trunc(requestedLimit)));
   const modes = sessionModes[session];
   const perMode = Math.ceil(limit / modes.length);
-  const generated = buildDailyDrills(content, { dateKey, modes, limitPerMode: perMode });
+  const generated = buildDailyDrills(content, { dateKey, modes, limitPerMode: perMode, round });
   const buckets = new Map(modes.map((mode) => [mode, generated.filter((drill) => drill.mode === mode)]));
   const balanced: DrillView[] = [];
 

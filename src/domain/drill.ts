@@ -45,6 +45,7 @@ export type DrillBuildOptions = {
   modes?: readonly DrillMode[];
   limitPerMode?: number;
   optionCount?: number;
+  round?: number;
 };
 
 export type DrillGrade =

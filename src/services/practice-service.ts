@@ -6,12 +6,12 @@ import type { ExerciseOption } from "@/domain/exercise";
 import type { PracticeExerciseView } from "@/domain/api-contracts";
 import { rotateExerciseBank } from "@/lib/exercise-bank";
 
-export async function getPracticeExercises(limit = 10): Promise<PracticeExerciseView[]> {
+export async function getPracticeExercises(limit = 10, round = 0): Promise<PracticeExerciseView[]> {
   const exercises = await prisma.exercise.findMany({
     where: { part: 5, status: "approved" },
     orderBy: [{ difficulty: "asc" }, { id: "asc" }],
   });
-  const rotated = rotateExerciseBank(exercises, toLocalDateKey(), limit);
+  const rotated = rotateExerciseBank(exercises, toLocalDateKey(), limit, round);
   return rotated.map((exercise) => ({
     id: exercise.id,
     part: exercise.part,
