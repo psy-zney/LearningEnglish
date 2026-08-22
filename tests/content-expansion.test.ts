@@ -5,9 +5,9 @@ import { part5Exercises } from "../src/data/part5-exercises.ts";
 import { phrases, tenses, verbs } from "../src/data/toeic650-source-data.ts";
 
 test("provides a broad TOEIC 650 vocabulary and Part 5 bank", () => {
-  assert.ok(verbs.length >= 70, `expected at least 70 verbs, received ${verbs.length}`);
-  assert.ok(phrases.length >= 100, `expected at least 100 phrases, received ${phrases.length}`);
-  assert.ok(part5Exercises.length >= 100, `expected at least 100 Part 5 questions, received ${part5Exercises.length}`);
+  assert.ok(verbs.length >= 90, `expected at least 90 verbs, received ${verbs.length}`);
+  assert.ok(phrases.length >= 120, `expected at least 120 phrases, received ${phrases.length}`);
+  assert.ok(part5Exercises.length >= 200, `expected at least 200 Part 5 questions, received ${part5Exercises.length}`);
 });
 
 test("covers every business topic with both vocabulary and multiple questions", () => {

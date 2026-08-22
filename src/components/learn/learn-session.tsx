@@ -9,7 +9,7 @@ import { apiRequest } from "@/lib/api-client";
 import { isAcceptedAnswer } from "@/lib/answer-normalizer";
 import { playAnswerFeedback } from "@/lib/feedback-sound";
 
-type Phase = "pattern" | "recall" | "summary";
+type Phase = "pattern" | "recall" | "toeic_challenge" | "summary";
 
 function stringArray(value: unknown) {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
@@ -45,11 +45,14 @@ export function LearnSession({ items }: { items: ContentView[] }) {
   const [answer, setAnswer] = useState("");
   const [checked, setChecked] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [toeicSelected, setToeicSelected] = useState("");
+  const [toeicChecked, setToeicChecked] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const answerInputRef = useRef<HTMLInputElement>(null);
   const current = items[index];
   const example = current ? getExample(current) : { en: "", vi: "" };
+  const applied = current?.appliedExercise ?? null;
 
   useEffect(() => {
     if (phase !== "recall") return;
@@ -70,6 +73,14 @@ export function LearnSession({ items }: { items: ContentView[] }) {
     playAnswerFeedback(correct);
   }
 
+  function handleToeicSelect(optionId: string) {
+    if (toeicChecked || !applied) return;
+    setToeicSelected(optionId);
+    setToeicChecked(true);
+    const correct = optionId === applied.correctOptionId;
+    playAnswerFeedback(correct);
+  }
+
   function nextItem() {
     if (index === items.length - 1) {
       setPhase("summary");
@@ -80,6 +91,8 @@ export function LearnSession({ items }: { items: ContentView[] }) {
     setAnswer("");
     setChecked(false);
     setIsCorrect(false);
+    setToeicSelected("");
+    setToeicChecked(false);
   }
 
   async function finish() {
@@ -129,10 +142,13 @@ export function LearnSession({ items }: { items: ContentView[] }) {
       <div className="border-b border-[var(--border)] px-5 py-4 md:px-7">
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm font-bold">Mục {index + 1} / {items.length}</p>
-          <p className="status-pill">{current.kind}</p>
+          <div className="flex items-center gap-2">
+            {phase === "toeic_challenge" && <span className="rounded-full bg-[var(--primary)] px-2.5 py-0.5 text-xs font-bold text-white">TOEIC Exam Drill</span>}
+            <p className="status-pill">{current.kind}</p>
+          </div>
         </div>
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--panel-soft)]">
-          <div className="h-full rounded-full bg-[var(--primary)] transition-[width]" style={{ width: `${((index + (phase === "recall" ? 0.7 : 0.2)) / items.length) * 100}%` }} />
+          <div className="h-full rounded-full bg-[var(--primary)] transition-[width]" style={{ width: `${((index + (phase === "recall" ? 0.5 : phase === "toeic_challenge" ? 0.85 : 0.2)) / items.length) * 100}%` }} />
         </div>
       </div>
 
@@ -171,7 +187,7 @@ export function LearnSession({ items }: { items: ContentView[] }) {
             </button>
           </div>
         </div>
-      ) : (
+      ) : phase === "recall" ? (
         <div className="mx-auto flex min-h-[440px] max-w-2xl flex-col justify-center p-6 md:p-8">
           <p className="eyebrow">Active recall</p>
           <h2 className="mt-3 text-2xl font-extrabold">{current.kind === "tense" ? `Tên tiếng Anh của “${current.meaningVi}” là gì?` : `Cụm tiếng Anh cho “${current.meaningVi}” là gì?`}</h2>
@@ -185,7 +201,60 @@ export function LearnSession({ items }: { items: ContentView[] }) {
               <p className="font-extrabold">{isCorrect ? "Đúng — đã nhớ chủ động." : "Chưa khớp. Ghi lại cả cụm:"}</p>
               <p className="mt-2 text-2xl font-extrabold">{current.title}</p>
               <p className="muted mt-2 font-mono text-sm">{getPattern(current)}</p>
-              <button type="button" onClick={nextItem} className="btn-primary mt-5">{index === items.length - 1 ? "Xem summary" : "Mục tiếp theo"}<ArrowRight className="size-4" /></button>
+              {applied ? (
+                <button type="button" onClick={() => { setPhase("toeic_challenge"); setToeicSelected(""); setToeicChecked(false); }} className="btn-primary mt-5">
+                  Thử thách câu hỏi TOEIC áp dụng <ArrowRight className="size-4" />
+                </button>
+              ) : (
+                <button type="button" onClick={nextItem} className="btn-primary mt-5">
+                  {index === items.length - 1 ? "Xem summary" : "Mục tiếp theo"} <ArrowRight className="size-4" />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="mx-auto flex min-h-[440px] max-w-2xl flex-col justify-center p-6 md:p-8">
+          <p className="eyebrow">TOEIC Part 5 Application</p>
+          <p className="mt-1 text-sm text-[var(--muted)]">Áp dụng kiến thức vừa học vào câu hỏi đề thi thực tế:</p>
+          {applied && (
+            <div className="mt-4">
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+                <p className="text-xl font-bold leading-relaxed">{applied.prompt}</p>
+              </div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {applied.options.map((opt) => {
+                  const isSelected = toeicSelected === opt.id;
+                  const isRight = opt.id === applied.correctOptionId;
+                  let cardClass = "study-card p-4 text-left transition-all cursor-pointer hover:border-[var(--primary)]";
+                  if (toeicChecked) {
+                    if (isRight) cardClass = "study-card p-4 text-left border-[var(--success)] bg-[rgba(95,118,93,0.12)] font-bold";
+                    else if (isSelected) cardClass = "study-card p-4 text-left border-[var(--danger)] bg-[rgba(141,75,75,0.12)]";
+                    else cardClass = "study-card p-4 text-left opacity-60";
+                  }
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      disabled={toeicChecked}
+                      onClick={() => handleToeicSelect(opt.id)}
+                      className={cardClass}
+                    >
+                      <span className="mr-2.5 inline-block font-mono text-sm font-extrabold text-[var(--primary)]">({opt.id})</span>
+                      <span>{opt.text}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {toeicChecked && (
+                <div className={`mt-5 rounded-2xl border p-5 ${toeicSelected === applied.correctOptionId ? "border-[var(--success)]/40 bg-[rgba(95,118,93,0.07)]" : "border-[var(--danger)]/40 bg-[rgba(141,75,75,0.07)]"}`}>
+                  <p className="font-extrabold">{toeicSelected === applied.correctOptionId ? "Chính xác!" : `Đáp án đúng là (${applied.correctOptionId})`}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--foreground)]">{applied.explanationVi}</p>
+                  <button type="button" onClick={nextItem} className="btn-primary mt-5">
+                    {index === items.length - 1 ? "Xem summary" : "Mục tiếp theo"} <ArrowRight className="size-4" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -2,6 +2,7 @@ import "server-only";
 
 import prisma from "@/lib/prisma";
 import type { ContentView } from "@/domain/api-contracts";
+import type { ExerciseOption } from "@/domain/exercise";
 
 function safeJson(value: string) {
   try {
@@ -51,6 +52,59 @@ export function toContentView(item: {
   };
 }
 
+async function attachAppliedExercises(views: ContentView[]): Promise<ContentView[]> {
+  if (views.length === 0) return views;
+  const exercises = await prisma.exercise.findMany({
+    where: { status: "approved" },
+    select: {
+      id: true,
+      prompt: true,
+      optionsJson: true,
+      correctOptionId: true,
+      explanationVi: true,
+      errorCategory: true,
+      focusContentIds: true,
+    },
+  });
+
+  const exerciseMap = new Map<string, {
+    id: string;
+    prompt: string;
+    options: ExerciseOption[];
+    correctOptionId: string;
+    explanationVi: string;
+    errorCategory: string;
+  }>();
+
+  for (const ex of exercises) {
+    const focusIds = ex.focusContentIds.split(",").map((s) => s.trim()).filter(Boolean);
+    let options: ExerciseOption[] = [];
+    try {
+      options = JSON.parse(ex.optionsJson) as ExerciseOption[];
+    } catch {
+      continue;
+    }
+    const viewObj = {
+      id: ex.id,
+      prompt: ex.prompt,
+      options,
+      correctOptionId: ex.correctOptionId,
+      explanationVi: ex.explanationVi,
+      errorCategory: ex.errorCategory,
+    };
+    for (const id of focusIds) {
+      if (!exerciseMap.has(id)) {
+        exerciseMap.set(id, viewObj);
+      }
+    }
+  }
+
+  return views.map((v) => ({
+    ...v,
+    appliedExercise: exerciseMap.get(v.sourceKey) ?? null,
+  }));
+}
+
 export async function getLibraryContent() {
   const items = await prisma.contentItem.findMany({
     where: { archivedAt: null },
@@ -84,7 +138,7 @@ export async function getNewContent(limit = 6) {
     }
   }
 
-  return mixed.map(toContentView);
+  return attachAppliedExercises(mixed.map(toContentView));
 }
 
 export async function getReinforcementContent(limit = 6) {
@@ -113,5 +167,6 @@ export async function getReinforcementContent(limit = 6) {
   }
   while (mixed.length < limit && remaining.length > 0) mixed.push(remaining.shift()!);
 
-  return mixed.slice(0, limit).map(toContentView);
+  return attachAppliedExercises(mixed.slice(0, limit).map(toContentView));
 }
+

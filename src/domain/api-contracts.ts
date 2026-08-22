@@ -2,6 +2,15 @@ import type { ExerciseOption } from "@/domain/exercise";
 import type { DrillView } from "@/domain/drill";
 import type { DrillSession } from "@/lib/drill-session";
 
+export type AppliedExerciseView = {
+  id: string;
+  prompt: string;
+  options: ExerciseOption[];
+  correctOptionId: string;
+  explanationVi: string;
+  errorCategory: string;
+};
+
 export type ContentView = {
   id: string;
   sourceKey: string;
@@ -19,6 +28,7 @@ export type ContentView = {
     interval: number;
     repetition: number;
   } | null;
+  appliedExercise?: AppliedExerciseView | null;
 };
 
 export type DailyPlan = {
