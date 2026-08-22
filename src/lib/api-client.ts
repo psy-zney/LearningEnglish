@@ -120,6 +120,9 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   }
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("auth:required", { detail: { path } }));
+    }
     throw new ApiClientError(errorMessage(payload, `Backend request failed with status ${response.status}.`), {
       code: "HTTP",
       status: response.status,

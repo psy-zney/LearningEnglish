@@ -46,6 +46,12 @@ export function DrillSession({
   const finished = index >= drills.length;
 
   useEffect(() => {
+    const handleAuthSuccess = () => setError("");
+    window.addEventListener("auth:success", handleAuthSuccess);
+    return () => window.removeEventListener("auth:success", handleAuthSuccess);
+  }, []);
+
+  useEffect(() => {
     if (finished || feedback) return;
     startedAtRef.current = Date.now();
     setElapsedSeconds(0);
@@ -209,7 +215,20 @@ export function DrillSession({
               <button type="button" onClick={next} className="btn-primary mt-5">{index === drills.length - 1 ? "Xem kết quả" : "Câu tiếp theo"}<ArrowRight className="size-4" /></button>
             </div>
           )}
-          {error && <p className="mt-4 rounded-xl border border-[var(--danger)]/40 bg-[rgba(141,75,75,0.07)] p-3 text-sm text-[var(--danger)]">{error}</p>}
+          {error && (
+            <div className="mt-4 flex items-center justify-between rounded-xl border border-[var(--danger)]/40 bg-[rgba(141,75,75,0.07)] p-3 text-sm text-[var(--danger)]">
+              <span>{error}</span>
+              {(error.includes("Authentication required") || error.includes("Backend authentication") || error.includes("401")) && (
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal"))}
+                  className="underline font-bold hover:opacity-80 cursor-pointer text-xs uppercase ml-2 shrink-0"
+                >
+                  Đăng nhập ngay
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </section>

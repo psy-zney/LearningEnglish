@@ -30,6 +30,12 @@ export function PracticeSession({ exercises }: { exercises: PracticeExerciseView
   const finished = index >= exercises.length;
 
   useEffect(() => {
+    const handleAuthSuccess = () => setError("");
+    window.addEventListener("auth:success", handleAuthSuccess);
+    return () => window.removeEventListener("auth:success", handleAuthSuccess);
+  }, []);
+
+  useEffect(() => {
     if (finished || feedback) return;
     startedAtRef.current = Date.now();
     setElapsedSeconds(0);
@@ -173,7 +179,20 @@ export function PracticeSession({ exercises }: { exercises: PracticeExerciseView
             </div>
           )}
           </div>
-          {error && <p className="mt-4 text-sm text-[var(--danger)]">{error}</p>}
+          {error && (
+            <div className="mt-4 flex items-center justify-between rounded-xl border border-[var(--danger)]/40 bg-[rgba(141,75,75,0.07)] p-3 text-sm text-[var(--danger)]">
+              <span>{error}</span>
+              {(error.includes("Authentication required") || error.includes("Backend authentication") || error.includes("401")) && (
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal"))}
+                  className="underline font-bold hover:opacity-80 cursor-pointer text-xs uppercase ml-2 shrink-0"
+                >
+                  Đăng nhập ngay
+                </button>
+              )}
+            </div>
+          )}
           <p className="muted mt-3 text-xs">Phím 1–4 để chọn · Enter để chấm/chuyển câu</p>
         </div>
 

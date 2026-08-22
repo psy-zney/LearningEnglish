@@ -57,6 +57,14 @@ export function ReviewSession({ queue }: { queue: QueueItem[] }) {
   const matched = current ? isAcceptedAnswer(answer, [current.content.title]) : false;
 
   useEffect(() => {
+    const handleAuthSuccess = () => {
+      setError("");
+    };
+    window.addEventListener("auth:success", handleAuthSuccess);
+    return () => window.removeEventListener("auth:success", handleAuthSuccess);
+  }, []);
+
+  useEffect(() => {
     if (finished) return;
     startedAtRef.current = Date.now();
     setElapsedSeconds(0);
@@ -212,7 +220,20 @@ export function ReviewSession({ queue }: { queue: QueueItem[] }) {
             </div>
             <p className="muted mt-3 text-xs">Enter: Easy · Enter ×2: Hard · phím 1–4: Again → Easy</p>
             {isSaving && <p className="muted mt-3 flex items-center gap-2 text-sm"><Loader2 className="size-4 animate-spin" />Đang lưu lịch ôn…</p>}
-            {error && <p className="mt-3 text-sm text-[var(--danger)]">{error}</p>}
+            {error && (
+              <div className="mt-3 flex items-center gap-2 text-sm text-[var(--danger)]">
+                <span>{error}</span>
+                {(error.includes("Authentication required") || error.includes("Backend authentication") || error.includes("401")) && (
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal"))}
+                    className="underline font-bold hover:opacity-80 cursor-pointer text-xs uppercase ml-1"
+                  >
+                    Đăng nhập ngay
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

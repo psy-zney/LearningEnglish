@@ -55,6 +55,14 @@ export function LearnSession({ items }: { items: ContentView[] }) {
   const applied = current?.appliedExercise ?? null;
 
   useEffect(() => {
+    const handleAuthSuccess = () => {
+      setSaveError("");
+    };
+    window.addEventListener("auth:success", handleAuthSuccess);
+    return () => window.removeEventListener("auth:success", handleAuthSuccess);
+  }, []);
+
+  useEffect(() => {
     if (phase !== "recall") return;
     answerInputRef.current?.focus();
     const focusInput = (event: KeyboardEvent) => {
@@ -132,7 +140,20 @@ export function LearnSession({ items }: { items: ContentView[] }) {
           {isSaving ? <Loader2 className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
           Đưa vào Review ngay
         </button>
-        {saveError && <p className="mt-3 text-sm text-[var(--danger)]">{saveError}</p>}
+        {saveError && (
+          <div className="mt-3 flex items-center gap-2 text-sm text-[var(--danger)]">
+            <span>{saveError}</span>
+            {(saveError.includes("Authentication required") || saveError.includes("Backend authentication") || saveError.includes("401")) && (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal"))}
+                className="underline font-bold hover:opacity-80 cursor-pointer text-xs uppercase ml-1"
+              >
+                Đăng nhập ngay
+              </button>
+            )}
+          </div>
+        )}
       </section>
     );
   }

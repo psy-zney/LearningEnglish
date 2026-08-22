@@ -5,9 +5,19 @@ import {
   createSessionToken,
   getAdminPasswordHash,
   getAuthSecret,
+  isAuthorizedRequest,
   verifyPasswordHash,
 } from '@/lib/auth';
 import { consumeRateLimit, requestClientKey } from '@/lib/request-security';
+
+export async function GET(request: Request) {
+  const secret = getAuthSecret();
+  if (!secret) {
+    return NextResponse.json({ authenticated: false, configured: false });
+  }
+  const authenticated = isAuthorizedRequest(request, secret);
+  return NextResponse.json({ authenticated, configured: true });
+}
 
 export async function POST(request: Request) {
   try {
