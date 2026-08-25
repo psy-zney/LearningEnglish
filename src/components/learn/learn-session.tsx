@@ -63,16 +63,44 @@ export function LearnSession({ items }: { items: ContentView[] }) {
   }, []);
 
   useEffect(() => {
-    if (phase !== "recall") return;
-    answerInputRef.current?.focus();
-    const focusInput = (event: KeyboardEvent) => {
-      if (event.key !== "/" || event.ctrlKey || event.altKey || event.metaKey) return;
-      event.preventDefault();
+    if (phase === "recall") {
       answerInputRef.current?.focus();
-    };
-    window.addEventListener("keydown", focusInput);
-    return () => window.removeEventListener("keydown", focusInput);
-  }, [index, phase]);
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
+        if (event.target instanceof HTMLElement && event.target.closest("button, a")) return;
+        if (event.key === "/" && !checked) {
+          event.preventDefault();
+          answerInputRef.current?.focus();
+          return;
+        }
+        if (event.key === "Enter" && checked && isCorrect) {
+          event.preventDefault();
+          if (applied) {
+            setPhase("toeic_challenge");
+            setToeicSelected("");
+            setToeicChecked(false);
+          } else {
+            nextItem();
+          }
+        }
+      };
+      window.addEventListener("keydown", onKeyDown);
+      return () => window.removeEventListener("keydown", onKeyDown);
+    }
+
+    if (phase === "toeic_challenge" && toeicChecked) {
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
+        if (event.target instanceof HTMLElement && event.target.closest("button, a")) return;
+        if (event.key === "Enter") {
+          event.preventDefault();
+          nextItem();
+        }
+      };
+      window.addEventListener("keydown", onKeyDown);
+      return () => window.removeEventListener("keydown", onKeyDown);
+    }
+  }, [applied, checked, index, isCorrect, phase, toeicChecked]);
 
   function checkRecall() {
     const correct = isAcceptedAnswer(answer, [current.title]);
@@ -223,8 +251,44 @@ export function LearnSession({ items }: { items: ContentView[] }) {
           <p className="eyebrow">Active recall</p>
           <h2 className="mt-3 text-2xl font-extrabold">{current.kind === "tense" ? `Tên tiếng Anh của “${current.meaningVi}” là gì?` : `Cụm tiếng Anh cho “${current.meaningVi}” là gì?`}</h2>
           <p className="muted mt-2">Gõ trước khi xem đáp án. Không cần hoàn hảo về viết hoa.</p>
-          <input ref={answerInputRef} value={answer} onChange={(event) => { setAnswer(event.target.value); setChecked(false); }} onKeyDown={(event) => { if (event.key === "Enter" && answer.trim()) checkRecall(); }} className={`study-input mt-6 text-lg ${checked ? isCorrect ? "border-[var(--success)] bg-[rgba(95,118,93,0.08)]" : "border-[var(--danger)] bg-[rgba(141,75,75,0.08)]" : ""}`} placeholder="Nhập câu trả lời…" aria-invalid={checked && !isCorrect} autoFocus />
-          <p className="muted mt-2 text-xs">Nhấn <kbd className="font-mono">/</kbd> để quay lại ô nhập.</p>
+          <input
+            ref={answerInputRef}
+            value={answer}
+            onChange={(event) => {
+              setAnswer(event.target.value);
+              setChecked(false);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                if (!checked) {
+                  if (answer.trim()) {
+                    event.preventDefault();
+                    checkRecall();
+                  }
+                } else if (isCorrect) {
+                  event.preventDefault();
+                  if (applied) {
+                    setPhase("toeic_challenge");
+                    setToeicSelected("");
+                    setToeicChecked(false);
+                  } else {
+                    nextItem();
+                  }
+                }
+              }
+            }}
+            className={`study-input mt-6 text-lg ${checked ? isCorrect ? "border-[var(--success)] bg-[rgba(95,118,93,0.08)]" : "border-[var(--danger)] bg-[rgba(141,75,75,0.08)]" : ""}`}
+            placeholder="Nhập câu trả lời…"
+            aria-invalid={checked && !isCorrect}
+            autoFocus
+          />
+          <p className="muted mt-2 text-xs">
+            {!checked
+              ? "Nhấn Enter để kiểm tra · / để quay lại ô nhập."
+              : isCorrect
+                ? "Đúng! Nhấn Enter để chuyển sang bước tiếp theo."
+                : "Chưa đúng. Sửa lại câu trả lời trong ô nhập rồi nhấn Enter để thử lại."}
+          </p>
           {!checked ? (
             <button type="button" onClick={checkRecall} disabled={!answer.trim()} className="btn-primary mt-4 self-start">Kiểm tra</button>
           ) : (

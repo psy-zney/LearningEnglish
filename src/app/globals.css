@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
   --background: #f4f2ed;
   --foreground: #252522;
   --sidebar: #eceae4;
@@ -103,6 +104,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   background: var(--surface);
   color: var(--foreground);
   padding: 11px 13px;
+}
+
+.study-select {
+  color-scheme: light;
+  cursor: pointer;
+}
+
+.study-select option, select option {
+  background-color: #f8f7f3;
+  color: #252522;
 }
 
 .study-input::placeholder { color: var(--muted-2); }

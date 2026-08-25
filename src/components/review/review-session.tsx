@@ -136,6 +136,9 @@ export function ReviewSession({ queue }: { queue: QueueItem[] }) {
       }
 
       if (event.key !== "Enter") return;
+      // Only accept Enter / double Enter to rate and advance when the answer is correct
+      if (!matched) return;
+
       event.preventDefault();
       if (enterTimerRef.current) {
         clearTimeout(enterTimerRef.current);
@@ -155,7 +158,7 @@ export function ReviewSession({ queue }: { queue: QueueItem[] }) {
       if (enterTimerRef.current) clearTimeout(enterTimerRef.current);
       enterTimerRef.current = null;
     };
-  }, [isSaving, rate, revealed]);
+  }, [isSaving, matched, rate, revealed]);
 
   if (finished) {
     return (
@@ -190,7 +193,26 @@ export function ReviewSession({ queue }: { queue: QueueItem[] }) {
         <p className="eyebrow">Không nhìn gợi ý</p>
         <h2 className="mt-4 text-3xl font-extrabold leading-tight tracking-[-0.015em] md:text-4xl">{current.content.meaningVi}</h2>
         <p className="muted mt-3">Gõ headword hoặc cả cụm tiếng Anh.</p>
-        <input ref={answerInputRef} value={answer} onChange={(event) => { setAnswer(event.target.value); setRevealed(false); }} onKeyDown={(event) => { if (event.key === "Enter" && answer.trim()) revealAnswer(); }} className={`study-input mt-7 text-lg ${revealed ? matched ? "border-[var(--success)] bg-[rgba(95,118,93,0.08)]" : "border-[var(--danger)] bg-[rgba(141,75,75,0.08)]" : ""}`} placeholder="Câu trả lời của bạn…" aria-invalid={revealed && !matched} autoFocus />
+        <input
+          ref={answerInputRef}
+          value={answer}
+          onChange={(event) => {
+            setAnswer(event.target.value);
+            setRevealed(false);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              if (!revealed && answer.trim()) {
+                event.preventDefault();
+                revealAnswer();
+              }
+            }
+          }}
+          className={`study-input mt-7 text-lg ${revealed ? matched ? "border-[var(--success)] bg-[rgba(95,118,93,0.08)]" : "border-[var(--danger)] bg-[rgba(141,75,75,0.08)]" : ""}`}
+          placeholder="Câu trả lời của bạn…"
+          aria-invalid={revealed && !matched}
+          autoFocus
+        />
         <p className="muted mt-2 text-xs">Enter để kiểm tra · <kbd className="font-mono">/</kbd> để quay lại ô nhập.</p>
 
         {!revealed ? (
@@ -218,7 +240,11 @@ export function ReviewSession({ queue }: { queue: QueueItem[] }) {
                 </button>
               ))}
             </div>
-            <p className="muted mt-3 text-xs">Enter: Easy · Enter ×2: Hard · phím 1–4: Again → Easy</p>
+            {matched ? (
+              <p className="muted mt-3 text-xs text-[var(--success)] font-medium">Đúng! Enter: Easy · Enter ×2: Hard · phím 1–4: Again → Easy</p>
+            ) : (
+              <p className="muted mt-3 text-xs text-[var(--danger)] font-medium">Chưa khớp đáp án. Nhấn phím 1 (Again) để học lại hoặc sửa lại câu trả lời trong ô nhập.</p>
+            )}
             {isSaving && <p className="muted mt-3 flex items-center gap-2 text-sm"><Loader2 className="size-4 animate-spin" />Đang lưu lịch ôn…</p>}
             {error && (
               <div className="mt-3 flex items-center gap-2 text-sm text-[var(--danger)]">
