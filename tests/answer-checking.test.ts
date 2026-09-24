@@ -20,3 +20,12 @@ test("matches accepted answers correctly and rejects wrong answers", () => {
   assert.equal(isAcceptedAnswer("center distribution", targets), false);
   assert.equal(isAcceptedAnswer("", targets), false);
 });
+
+test("evaluates correct option selection accurately", () => {
+  const isSelectedCorrect = (selected: string, target: string) => selected === target;
+  const correctOptionId: string = "B";
+  assert.equal(isSelectedCorrect("B", correctOptionId), true);
+  assert.equal(isSelectedCorrect("A", correctOptionId), false);
+  assert.equal(isSelectedCorrect("C", correctOptionId), false);
+  assert.equal(isSelectedCorrect("D", correctOptionId), false);
+});

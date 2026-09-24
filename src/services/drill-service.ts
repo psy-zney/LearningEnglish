@@ -98,22 +98,7 @@ export async function answerDrill(input: {
     : null;
   const errorCategory = grade.isCorrect ? null : `drill_${grade.mode}`;
 
-  const dayStart = new Date(`${input.dateKey}T00:00:00+07:00`);
-  const storedCorrect = await prisma.$transaction(async (tx) => {
-    const priorAttempts = await tx.attempt.findMany({
-      where: { contentItemId: grade.contentId, mode: grade.mode, createdAt: { gte: dayStart } },
-      select: { isCorrect: true, metadataJson: true },
-    });
-    const duplicate = priorAttempts.find((attempt) => {
-      try {
-        const metadata = attempt.metadataJson ? JSON.parse(attempt.metadataJson) as Record<string, unknown> : null;
-        return metadata?.drillId === input.drillId;
-      } catch {
-        return false;
-      }
-    });
-    if (duplicate) return duplicate.isCorrect ?? false;
-
+  await prisma.$transaction(async (tx) => {
     await tx.attempt.create({
       data: {
         contentItemId: grade.contentId,
@@ -140,11 +125,10 @@ export async function answerDrill(input: {
         minutesStudied: { increment: 1 },
       },
     });
-    return grade.isCorrect;
   });
 
   return {
-    correct: storedCorrect,
+    correct: grade.isCorrect,
     correctAnswer: grade.correctAnswer,
     errorCategory,
     explanation: grade.explanation ?? explanationFor(item, grade.mode, grade.correctAnswer),

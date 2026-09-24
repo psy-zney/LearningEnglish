@@ -7,10 +7,12 @@ import {
   BarChart3,
   CalendarCheck2,
   CheckCircle2,
+  Compass,
   FileCheck2,
   GraduationCap,
   Library,
   Lock,
+  Mic,
   RotateCcw,
   Target,
 } from "lucide-react";
@@ -20,6 +22,8 @@ import { apiRequest } from "@/lib/api-client";
 
 const navItems = [
   { href: "/", label: "Today", icon: CalendarCheck2 },
+  { href: "/roadmap", label: "TOEIC 0→600", shortLabel: "Roadmap", icon: Compass },
+  { href: "/shadowing", label: "Shadowing & Nói", shortLabel: "Shadowing", icon: Mic },
   { href: "/learn", label: "Learn", icon: GraduationCap },
   { href: "/review", label: "Review", icon: RotateCcw },
   { href: "/practice", label: "TOEIC Practice", shortLabel: "Practice", icon: FileCheck2 },
@@ -27,7 +31,7 @@ const navItems = [
   { href: "/progress", label: "Progress", icon: BarChart3 },
 ];
 
-const mobileNav = navItems.filter((item) => ["/", "/review", "/practice", "/library"].includes(item.href));
+const mobileNav = navItems.filter((item) => ["/", "/roadmap", "/shadowing", "/practice", "/library"].includes(item.href));
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

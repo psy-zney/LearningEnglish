@@ -31,14 +31,7 @@ export async function answerPracticeExercise(exerciseId: string, selectedOptionI
   const correctOption = options.find((option) => option.id === exercise.correctOptionId)!;
   const dateKey = toLocalDateKey();
 
-  const dayStart = new Date(`${dateKey}T00:00:00+07:00`);
-  const storedCorrect = await prisma.$transaction(async (tx) => {
-    const existing = await tx.attempt.findFirst({
-      where: { exerciseId, mode: "toeic_part_5", createdAt: { gte: dayStart } },
-      select: { isCorrect: true },
-    });
-    if (existing) return existing.isCorrect ?? false;
-
+  await prisma.$transaction(async (tx) => {
     await tx.attempt.create({
       data: {
         exerciseId,
@@ -66,14 +59,13 @@ export async function answerPracticeExercise(exerciseId: string, selectedOptionI
         minutesStudied: { increment: 1 },
       },
     });
-    return isCorrect;
   });
 
   return {
-    correct: storedCorrect,
+    correct: isCorrect,
     acceptedAnswers: [correctOption.text],
     correctOptionId: exercise.correctOptionId,
-    errorCategory: storedCorrect ? null : exercise.errorCategory,
+    errorCategory: isCorrect ? null : exercise.errorCategory,
     explanation: exercise.explanationVi,
     optionRationales: Object.fromEntries(options.map((option) => [option.id, option.rationaleVi])),
   };
