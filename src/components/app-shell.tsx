@@ -17,8 +17,6 @@ import {
   Target,
 } from "lucide-react";
 import { useSoftReveal } from "@/lib/use-soft-reveal";
-import { AuthModal } from "@/components/auth-modal";
-import { apiRequest } from "@/lib/api-client";
 
 const navItems = [
   { href: "/", label: "Today", icon: CalendarCheck2 },
@@ -36,31 +34,9 @@ const mobileNav = navItems.filter((item) => ["/", "/roadmap", "/shadowing", "/pr
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const shellRef = useSoftReveal<HTMLDivElement>();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-
-  const checkAuth = async () => {
-    try {
-      const data = await apiRequest<{ authenticated: boolean; configured: boolean }>("/api/auth/login");
-      setIsAuthenticated(Boolean(data?.authenticated));
-    } catch {
-      setIsAuthenticated(false);
-    }
-  };
-
-  useEffect(() => {
-    checkAuth();
-    const handleAuthSuccess = () => setIsAuthenticated(true);
-    window.addEventListener("auth:success", handleAuthSuccess);
-    return () => window.removeEventListener("auth:success", handleAuthSuccess);
-  }, []);
-
-  const openLoginModal = () => {
-    window.dispatchEvent(new CustomEvent("open-auth-modal"));
-  };
 
   return (
     <div ref={shellRef} className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      <AuthModal />
       <div className="flex min-h-screen flex-col md:flex-row">
         <aside
           data-reveal
@@ -101,23 +77,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="p-4 space-y-3">
-            <button
-              type="button"
-              onClick={openLoginModal}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-[14px] text-xs font-bold transition-colors border ${
-                isAuthenticated
-                  ? "border-[var(--success)]/30 bg-[rgba(95,118,93,0.08)] text-[var(--success)]"
-                  : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--foreground)] hover:border-[var(--primary)]/40"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                {isAuthenticated ? <CheckCircle2 className="size-3.5" /> : <Lock className="size-3.5" />}
-                {isAuthenticated ? "Đã xác thực" : "Chưa đăng nhập"}
-              </span>
-              <span className="text-[0.65rem] underline uppercase font-semibold">
-                {isAuthenticated ? "Đổi pass" : "Đăng nhập"}
-              </span>
-            </button>
 
             <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] p-4">
               <p className="eyebrow">Target</p>
@@ -142,14 +101,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
-          <button
-            type="button"
-            onClick={openLoginModal}
-            className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-[0.68rem] font-bold ${isAuthenticated ? "text-[var(--success)]" : "text-[var(--muted)]"}`}
-          >
-            {isAuthenticated ? <CheckCircle2 className="size-[1.15rem]" /> : <Lock className="size-[1.15rem]" />}
-            <span>{isAuthenticated ? "Đã xác thực" : "Đăng nhập"}</span>
-          </button>
         </nav>
       </div>
     </div>
