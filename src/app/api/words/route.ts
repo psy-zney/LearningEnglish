@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { validateWordMeaning } from '@/lib/word-ai';
-import { isAuthorizedRequest } from '@/lib/auth';
+import { toPublicWord } from '@/lib/legacy-content';
 
 export async function GET() {
   try {
@@ -11,7 +11,7 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(words);
+    return NextResponse.json(words.map(toPublicWord));
   } catch (error) {
     console.error('Error fetching words:', error);
     return NextResponse.json(
@@ -23,10 +23,6 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    // Check auth
-    if (!isAuthorizedRequest(request)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const body = await request.json();
     const word = typeof body.word === 'string' ? body.word.trim() : '';
@@ -50,19 +46,21 @@ export async function POST(request: Request) {
     }
 
     let status = 'unverified';
+    let correctedWord = word;
     let correctMeaning = meaning;
-    let explanation = 'Chua duoc kiem tra bang AI.';
+    let explanation = 'Chưa đối chiếu từ điển.';
     let synonyms = '';
 
     try {
       const aiResponse = await validateWordMeaning(word, meaning);
       status = aiResponse.status;
+      correctedWord = aiResponse.correctedWord;
       correctMeaning = aiResponse.correctMeaning;
       explanation = aiResponse.explanation;
       synonyms = aiResponse.synonyms;
     } catch (aiError) {
-      console.error('Failed to validate meaning with Ollama:', aiError);
-      explanation = 'Khong the ket noi voi AI de kiem tra nghia.';
+      console.error('Dictionary validation failed:', aiError);
+      explanation = 'Chưa thể đối chiếu từ điển; giữ nguyên nghĩa bạn nhập.';
     }
 
     const newWord = await prisma.word.create({
@@ -70,13 +68,14 @@ export async function POST(request: Request) {
         word,
         meaning,
         status,
+        correctedWord,
         correctMeaning,
         explanation,
         synonyms,
       },
     });
 
-    return NextResponse.json(newWord, { status: 201 });
+    return NextResponse.json(toPublicWord(newWord), { status: 201 });
   } catch (error) {
     console.error('Error creating word:', error);
     return NextResponse.json({ error: 'Failed to create word' }, { status: 500 });

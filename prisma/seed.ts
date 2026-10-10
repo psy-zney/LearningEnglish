@@ -7,6 +7,7 @@ import {
   validateToeic650SourceData,
   verbs,
 } from "../src/data/toeic650-source-data.ts";
+import { foundationExercises } from "../src/data/foundation-exercises.ts";
 import { part5Exercises, validatePart5Exercises } from "../src/data/part5-exercises.ts";
 import { repairKnownLegacyWord, serializeLegacyWordContent } from "../src/lib/legacy-content.ts";
 
@@ -108,6 +109,7 @@ async function main() {
         where: { id: word.id },
         data: {
           meaning: word.meaning,
+          correctedWord: word.correctedWord,
           correctMeaning: word.correctMeaning,
           explanation: word.explanation,
         },
@@ -146,7 +148,7 @@ async function main() {
     report.legacy += 1;
   }
 
-  for (const exercise of part5Exercises) {
+  for (const exercise of [...part5Exercises, ...foundationExercises]) {
     await prisma.exercise.upsert({
       where: { id: exercise.id },
       create: {

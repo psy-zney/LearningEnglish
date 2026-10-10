@@ -59,7 +59,7 @@ export const lesson1Introduction: GrammarLesson = {
     },
     {
       heading: "3. Cách nhận biết vị trí từ loại trong câu",
-      content: "• Sau a/an/the/this/that → NOUN\n• Sau be/seem/become/look → ADJECTIVE\n• Trước NOUN → ADJECTIVE\n• Sau VERB → ADVERB (bổ nghĩa cho verb)\n• Trước ADJECTIVE → ADVERB (bổ nghĩa cho adj)",
+      content: "• Mạo từ mở đầu cụm danh từ: a report, a useful report; có thể có tính từ trước danh từ.\n• Be có thể đi với tính từ (is happy), danh từ (is a teacher), cụm giới từ (is at home), V-ing hoặc phân từ tùy cấu trúc.\n• Trước danh từ có thể là tính từ, từ sở hữu hoặc danh từ bổ nghĩa: new report, his report, sales report.\n• Sau động từ có thể là tân ngữ hoặc trạng từ: read books, work carefully.\n• Trạng từ có thể bổ nghĩa tính từ: very useful. Đây là dấu hiệu cần xét cùng cả câu, không phải quy tắc chọn từ tuyệt đối.",
       examples: [
         { en: "The _____ report was submitted. (annual → adj trước noun)", vi: "Báo cáo hàng năm đã được nộp." },
         { en: "She works _____. (efficiently → adv sau verb)", vi: "Cô ấy làm việc hiệu quả." },

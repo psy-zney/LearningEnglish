@@ -122,8 +122,9 @@ test("blanks an exact escaped term without replacing a longer lookalike", () => 
     limitPerMode: 1,
   })[0];
 
-  assert.equal(drill.prompt, "Use _____ today; plan (AB) stays visible.");
-  assert.equal(drill.prompt.includes("plan (A)"), false);
+  assert.equal(drill.prompt.split('\n')[0], "Use _____ today; plan (AB) stays visible.");
+  assert.match(drill.prompt, /gợi ý: plan \(A\)/);
+  assert.equal(drill.prompt.split('\n')[0].includes("plan (A)"), false);
 });
 
 test("grades choice and text drills while tolerating case, spacing, and trailing punctuation", () => {
@@ -137,8 +138,13 @@ test("grades choice and text drills while tolerating case, spacing, and trailing
   assert.ok(meaningTarget);
   const correctOption = meaning.options.find((option) => option.text === meaningTarget?.meaningVi);
   assert.ok(correctOption);
+  const meaningGrade = gradeDailyDrill(content, { ...buildOptions, drillId: meaning.id, answer: correctOption.id });
+  assert.equal(meaningGrade.status, "graded");
+  if (meaningGrade.status !== "graded") throw new Error("Expected grade");
+  assert.match(meaningGrade.explanation ?? "", /Đáp án:.*\n.*Nghĩa đang học:/);
+  const { explanation: _explanation, ...result } = meaningGrade;
   assert.deepEqual(
-    gradeDailyDrill(content, { ...buildOptions, drillId: meaning.id, answer: correctOption.id }),
+    result,
     {
       status: "graded",
       isCorrect: true,

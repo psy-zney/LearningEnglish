@@ -26,7 +26,7 @@ npm run dev
 
 Open <http://localhost:1002>.
 
-The recommended mode is local-first and single-user. Read-only learning content and progress work without Ollama. On a public backend, sign in once at `/login`; the backend uses a signed, seven-day HttpOnly cookie for every state-changing request.
+The recommended mode is local-first and single-user. Read-only learning content and progress work without Ollama. Learning and saving progress do not require a password or a login session. The backend retains origin checks, request-size limits, and write rate limits.
 
 ## Production split
 
@@ -51,8 +51,6 @@ APP_DEPLOYMENT_MODE=backend
 NEXT_PUBLIC_API_URL=http://127.0.0.1:1002
 DATABASE_URL=file:dev.db
 ALLOWED_ORIGINS=https://study.zney295.id.vn,http://localhost:1002,http://localhost:3000
-ADMIN_PASSWORD_HASH=<sha256-of-your-password>
-TOKEN_SALT=<at-least-32-random-characters>
 OLLAMA_MODEL=qwen3.5:4b
 OLLAMA_BASE_URL=http://127.0.0.1:11434
 ```

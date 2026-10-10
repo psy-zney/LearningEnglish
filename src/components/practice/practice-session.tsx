@@ -16,7 +16,7 @@ type AnswerFeedback = {
   optionRationales: Record<string, string>;
 };
 
-export function PracticeSession({ exercises, round = 0 }: { exercises: PracticeExerciseView[]; round?: number }) {
+export function PracticeSession({ exercises, round = 0, session = "toeic_part_5" }: { exercises: PracticeExerciseView[]; round?: number; session?: string }) {
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState("");
   const [feedback, setFeedback] = useState<AnswerFeedback | null>(null);
@@ -37,12 +37,6 @@ export function PracticeSession({ exercises, round = 0 }: { exercises: PracticeE
     setError("");
     startedAtRef.current = Date.now();
   };
-
-  useEffect(() => {
-    const handleAuthSuccess = () => setError("");
-    window.addEventListener("auth:success", handleAuthSuccess);
-    return () => window.removeEventListener("auth:success", handleAuthSuccess);
-  }, []);
 
   useEffect(() => {
     if (finished || feedback) return;
@@ -119,7 +113,7 @@ export function PracticeSession({ exercises, round = 0 }: { exercises: PracticeE
       if (result.errorCategory) errorCounts.set(result.errorCategory, (errorCounts.get(result.errorCategory) ?? 0) + 1);
     }
     const topError = [...errorCounts.entries()].sort((a, b) => b[1] - a[1])[0];
-    const nextRoundHref = `/practice?session=toeic_part_5&round=${round + 1}`;
+    const nextRoundHref = `/practice?session=${session}&round=${round + 1}`;
 
     return (
       <section className="study-panel grid min-h-[460px] place-items-center p-7 text-center">
@@ -133,8 +127,8 @@ export function PracticeSession({ exercises, round = 0 }: { exercises: PracticeE
           <h2 className="mt-2 text-5xl font-extrabold tracking-[-0.015em]">{correct}/{results.length}</h2>
           <p className="muted mt-3">
             {isZeroError
-              ? "Tuyệt đối không có lỗi sai! Hệ thống đã tự động xoay và mở khóa 10 câu Part 5 tiếp theo."
-              : "Đây là accuracy của Part 5 drill, không phải điểm TOEIC ước tính."}
+              ? "Bạn đã trả lời đúng cả 5 câu. Tiếp tục với bộ câu khác để luyện thêm."
+              : "Hãy đọc lại giải thích cho những câu sai rồi luyện bộ tiếp theo."}
           </p>
           {topError && !isZeroError && (
             <p className="mt-5 rounded-2xl border border-[var(--warning)]/35 bg-[rgba(146,112,58,0.07)] p-4 text-sm">
@@ -145,7 +139,7 @@ export function PracticeSession({ exercises, round = 0 }: { exercises: PracticeE
             {isZeroError ? (
               <>
                 <Link href={nextRoundHref} className="btn-primary flex items-center gap-2">
-                  <span>Luyện 10 câu mới tiếp theo</span>
+                  <span>Luyện 5 câu tiếp theo</span>
                   <ArrowRight className="size-4" />
                 </Link>
                 <button type="button" onClick={restart} className="btn-quiet flex items-center gap-2">
@@ -160,7 +154,7 @@ export function PracticeSession({ exercises, round = 0 }: { exercises: PracticeE
                   <span>Luyện lại (Mục tiêu 0 lỗi)</span>
                 </button>
                 <Link href={nextRoundHref} className="btn-quiet flex items-center gap-2">
-                  <span>Chuyển 10 câu mới</span>
+                  <span>Chuyển 5 câu tiếp theo</span>
                   <ArrowRight className="size-4" />
                 </Link>
               </>
@@ -228,15 +222,6 @@ export function PracticeSession({ exercises, round = 0 }: { exercises: PracticeE
           {error && (
             <div className="mt-4 flex items-center justify-between rounded-xl border border-[var(--danger)]/40 bg-[rgba(141,75,75,0.07)] p-3 text-sm text-[var(--danger)]">
               <span>{error}</span>
-              {(error.includes("Authentication required") || error.includes("Backend authentication") || error.includes("401")) && (
-                <button
-                  type="button"
-                  onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal"))}
-                  className="underline font-bold hover:opacity-80 cursor-pointer text-xs uppercase ml-2 shrink-0"
-                >
-                  Đăng nhập ngay
-                </button>
-              )}
             </div>
           )}
           <p className="muted mt-3 text-xs">Phím 1–4 để chọn · Enter để chấm/chuyển câu</p>
@@ -255,8 +240,8 @@ export function PracticeSession({ exercises, round = 0 }: { exercises: PracticeE
             })}
           </div>
           <div className="mt-6 border-t border-[var(--border)] pt-5">
-            <p className="text-sm font-bold">Format thật, workload ngắn</p>
-            <p className="muted mt-2 text-xs leading-5">Part 5 dùng tốc độ và word/grammar decisions. Mỗi lỗi được ghi theo taxonomy để Progress có hành động tiếp theo.</p>
+            <p className="text-sm font-bold">Mỗi lượt 5 câu</p>
+            <p className="muted mt-2 text-xs leading-5">Đọc lý do cho đáp án bạn chọn, xem ví dụ rồi luyện bộ câu tiếp theo. Những lỗi cần ôn lại được lưu trong tiến độ học.</p>
           </div>
         </aside>
       </div>

@@ -21,9 +21,9 @@ test("repairs the known foot legacy record and its derived content", () => {
 
   assert.notStrictEqual(repaired, brokenFoot);
   assert.equal(repaired.meaning, "lòng bàn chân");
-  assert.equal(repaired.correctMeaning, "lòng bàn chân");
+  assert.equal(repaired.correctMeaning, "bàn chân");
   assert.doesNotMatch(repaired.explanation ?? "", /đùi/iu);
-  assert.equal(content.meaningVi, "lòng bàn chân");
+  assert.equal(content.meaningVi, "bàn chân");
   assert.doesNotMatch(content.contentJson, /đùi/iu);
 });
 
@@ -33,8 +33,8 @@ test("is idempotent after the foot repair has been applied", () => {
   assert.strictEqual(repairKnownLegacyWord(repaired), repaired);
 });
 
-test("does not change an unrelated foot record", () => {
-  const unrelated = { ...brokenFoot, id: "another-record" };
+test("does not change an unverified headword", () => {
+  const unrelated = { ...brokenFoot, id: "another-record", word: "unreviewed" };
 
   assert.strictEqual(repairKnownLegacyWord(unrelated), unrelated);
 });

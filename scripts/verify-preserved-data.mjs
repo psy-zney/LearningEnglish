@@ -28,7 +28,7 @@ try {
   console.log(JSON.stringify(report, null, 2));
   if (core !== expectedCore) throw new Error(`Expected ${expectedCore} active core items, found ${core}.`);
   if (legacy !== words) throw new Error(`Expected ${words} active legacy items, found ${legacy}.`);
-  if (foot?.correctMeaning !== "lòng bàn chân" || footContent?.meaningVi !== "lòng bàn chân") {
+  if (foot?.correctMeaning !== "bàn chân" || footContent?.meaningVi !== "bàn chân") {
     throw new Error("The known legacy foot mapping has not been repaired.");
   }
 } finally {

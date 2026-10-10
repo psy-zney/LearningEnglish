@@ -75,7 +75,16 @@ const starterPart5Exercises: Part5Exercise[] = [
   q("p5-030", "I am writing on _____ of the customer service department.", ["behalf", "response", "regard", "accordance"], 0, "On behalf of nghĩa là thay mặt cho một người hoặc tổ chức.", ERROR_CATEGORIES.wordChoice, ["phrase-on-behalf-of"], 2),
 ];
 
-export const part5Exercises: Part5Exercise[] = [...starterPart5Exercises, ...expandedPart5Exercises];
+export const part5Exercises: Part5Exercise[] = [...starterPart5Exercises, ...expandedPart5Exercises].map(exercise => {
+  const correct = exercise.options.find(option => option.id === exercise.correctOptionId)!;
+  const complete = exercise.prompt.replace(/_____/g, correct.text);
+  return { ...exercise,
+    explanationVi: `Đáp án: ${correct.text}. ${exercise.explanationVi} Ví dụ hoàn chỉnh: ${complete}`,
+    options: exercise.options.map(option => ({ ...option, rationaleVi: option.id === correct.id
+      ? `Chọn “${correct.text}”: ${exercise.explanationVi}`
+      : `Bạn chọn “${option.text}”, nhưng câu này cần “${correct.text}”. ${exercise.explanationVi} Đối chiếu câu đúng: ${complete}` })),
+  };
+});
 
 export function validatePart5Exercises(validContentIds?: ReadonlySet<string>) {
   const errors: string[] = [];

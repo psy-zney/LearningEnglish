@@ -5,6 +5,8 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const session = parseDrillSession(body.session);
+    const round = body.round ?? 0;
+    if (!Number.isSafeInteger(round) || round < 0 || round > 1000000) return Response.json({ error: "Vòng không hợp lệ." }, { status: 400 });
     const dateKey = typeof body.dateKey === "string" ? body.dateKey : "";
     const drillId = typeof body.drillId === "string" ? body.drillId : "";
     const answer = typeof body.answer === "string" ? body.answer : "";
@@ -12,7 +14,7 @@ export async function POST(request: Request) {
     if (!session || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey) || !drillId || !answer.trim()) {
       return Response.json({ error: "Câu trả lời không hợp lệ." }, { status: 400 });
     }
-    const result = await answerDrill({ session, dateKey, drillId, answer, responseTimeMs });
+    const result = await answerDrill({ session, dateKey, drillId, answer, responseTimeMs, round });
     if (!result) return Response.json({ error: "Bài tập đã hết hạn hoặc không hợp lệ." }, { status: 400 });
     return Response.json(result);
   } catch (error) {

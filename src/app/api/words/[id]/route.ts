@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { validateWordMeaning } from '@/lib/word-ai';
-import { isAuthorizedRequest } from '@/lib/auth';
+import { toPublicWord } from '@/lib/legacy-content';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: Request, { params }: RouteParams) {
   try {
-    if (!isAuthorizedRequest(request)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const { id } = await params;
     const body = await request.json();
@@ -30,6 +27,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     const nextMeaning = meaning ?? existingWord.meaning;
     const updateData: {
       word?: string;
+      correctedWord?: string;
       meaning?: string;
       synonyms?: string;
       status?: string;
@@ -43,8 +41,10 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       }
 
       updateData.word = word;
+      updateData.correctedWord = word;
+      updateData.correctMeaning = nextMeaning;
       updateData.status = 'unverified';
-      updateData.explanation = 'Dang cho AI kiem tra lai.';
+      updateData.explanation = 'Đang chờ đối chiếu lại với từ điển.';
     }
 
     if (meaning !== undefined) {
@@ -55,7 +55,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       updateData.meaning = meaning;
       updateData.status = 'unverified';
       updateData.correctMeaning = meaning;
-      updateData.explanation = 'Dang cho AI kiem tra lai.';
+      updateData.explanation = 'Đang chờ đối chiếu lại với từ điển.';
     }
 
     if (synonyms !== undefined) {
@@ -66,13 +66,14 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       try {
         const aiResponse = await validateWordMeaning(nextWord, nextMeaning);
         updateData.status = aiResponse.status;
+        updateData.correctedWord = aiResponse.correctedWord;
         updateData.correctMeaning = aiResponse.correctMeaning;
         updateData.explanation = aiResponse.explanation;
         updateData.synonyms = aiResponse.synonyms || synonyms || existingWord.synonyms || '';
       } catch (aiError) {
-        console.error('Failed to recheck word with Ollama:', aiError);
+        console.error('Dictionary recheck failed:', aiError);
         updateData.status = 'unverified';
-        updateData.explanation = 'Khong the ket noi voi AI de kiem tra lai.';
+        updateData.explanation = 'Chưa thể đối chiếu lại với từ điển.';
       }
     }
 
@@ -85,7 +86,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       data: updateData,
     });
 
-    return NextResponse.json(updatedWord);
+    return NextResponse.json(toPublicWord(updatedWord));
   } catch (error) {
     console.error('Error updating word:', error);
     return NextResponse.json({ error: 'Failed to update word' }, { status: 500 });
@@ -94,10 +95,6 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    if (!isAuthorizedRequest(request)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { id } = await params;
 
     await prisma.word.delete({

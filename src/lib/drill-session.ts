@@ -23,12 +23,13 @@ export function buildDrillSession(
   content: readonly DrillContent[],
   session: DrillSession,
   dateKey: string,
-  requestedLimit = 8,
+  _requestedLimit = 5,
   round = 0,
 ): DrillView[] {
-  const limit = Math.min(24, Math.max(1, Math.trunc(requestedLimit)));
+  void _requestedLimit;
+  const limit = 5;
   const modes = sessionModes[session];
-  const perMode = Math.ceil(limit / modes.length);
+  const perMode = 5;
   const generated = buildDailyDrills(content, { dateKey, modes, limitPerMode: perMode, round });
   const buckets = new Map(modes.map((mode) => [mode, generated.filter((drill) => drill.mode === mode)]));
   const balanced: DrillView[] = [];
@@ -45,5 +46,5 @@ export function buildDrillSession(
     if (!added) break;
   }
 
-  return balanced;
+  return balanced.length === 5 ? balanced : [];
 }

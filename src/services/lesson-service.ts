@@ -18,6 +18,9 @@ import { stage2GrammarLessons, stage2ReadingLessons, stage2ProgressTests } from 
 import { stage2ListeningLessons } from "../data/stage2-listening-data.ts";
 import { stage2VocabLessons, stage2VocabTests } from "../data/stage2-vocab-intermediate-data.ts";
 import { stage2AdditionalProgressTests } from "../data/stage2-progress-tests.ts";
+import { foundationExercises } from "../data/foundation-exercises.ts";
+import { readingAuditExpansion } from "../data/reading-audit-expansion.ts";
+import { withLessonFeedback } from "../lib/lesson-feedback.ts";
 
 // ─── Combine all lessons ─────────────────────────────────────────
 
@@ -33,7 +36,14 @@ const allLessons: LessonUnit[] = [
   ...stage2VocabLessons,
   ...stage2VocabTests,
   ...stage2AdditionalProgressTests,
-].sort((a, b) => {
+].map((lesson): LessonUnit => {
+  if (lesson.category === 'reading') return { ...lesson, exercises: [...lesson.exercises, ...readingAuditExpansion.filter(e => e.part === lesson.part)] };
+  if (lesson.category === 'grammar' && ['s1-gram-01','s2-gram-01'].includes(lesson.id)) {
+    const extra = foundationExercises.filter(e => e.errorCategory === (lesson.id === 's1-gram-01' ? 'basic_be' : 'basic_present'));
+    return { ...lesson, exercises: [...lesson.exercises, ...extra.map(e => ({ ...e, id: `${lesson.id}-${e.id}`, type: 'part5_fill_blank' as const, grammarPoint: e.errorCategory }))] };
+  }
+  return lesson;
+}).map(lesson => withLessonFeedback(lesson, [...stage1VocabLessons, ...stage2VocabLessons].flatMap(unit => unit.words))).sort((a, b) => {
   // Sort by stage first, then by order
   const stageOrder = { foundation: 0, intermediate: 1 };
   const stageDiff = stageOrder[a.stage] - stageOrder[b.stage];

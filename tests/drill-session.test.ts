@@ -18,12 +18,12 @@ test("accepts only the two generated drill sessions", () => {
   assert.equal(parseDrillSession("../../dev.db"), null);
 });
 
-test("balances modes and honors the requested session limit", () => {
+test("balances modes and always returns five questions", () => {
   const meaning = buildDrillSession(content, "meaning", "2026-08-21", 4);
-  assert.equal(meaning.length, 4);
+  assert.equal(meaning.length, 5);
   assert.deepEqual(new Set(meaning.map((drill) => drill.mode)), new Set(["meaning", "reverse_meaning"]));
 
   const context = buildDrillSession(content, "context", "2026-08-21", 6);
-  assert.equal(context.length, 6);
+  assert.equal(context.length, 5);
   assert.deepEqual(new Set(context.map((drill) => drill.mode)), new Set(["fill_blank", "collocation", "pattern"]));
 });

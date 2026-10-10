@@ -1,12 +1,8 @@
 import { NextResponse } from 'next/server';
-import { isAuthorizedRequest } from '@/lib/auth';
 import { ollama, ollamaModel } from '@/lib/ollama';
 
 export async function POST(request: Request) {
   try {
-    if (!isAuthorizedRequest(request)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const { words } = await request.json();
     

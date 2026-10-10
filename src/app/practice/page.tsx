@@ -9,11 +9,13 @@ import type {
   PracticeExercisesResponse,
 } from "@/domain/api-contracts";
 import { apiRequest } from "@/lib/api-client";
+import { foundationTypes, parseFoundationType } from "@/domain/foundation";
 import { parseDrillSession } from "@/lib/drill-session";
 
 export const dynamic = "force-dynamic";
 
 const sessionLinks = [
+  ...Object.entries(foundationTypes).map(([id, label]) => ({ href: `/practice?session=${id}`, label })),
   { href: "/practice?session=meaning", label: "Luyện nghĩa" },
   { href: "/practice?session=context", label: "Điền từ & cụm" },
   { href: "/practice?session=toeic_part_5", label: "Part 5" },
@@ -30,6 +32,7 @@ export default async function PracticePage({
   const sessionValue = Array.isArray(rawSession) ? rawSession[0] : rawSession;
   const roundValue = Array.isArray(rawRound) ? rawRound[0] : rawRound;
   const round = Math.max(0, parseInt(roundValue ?? "0", 10) || 0);
+  const foundation = parseFoundationType(sessionValue);
   const drillSession = parseDrillSession(sessionValue);
   const isPart5 = !drillSession;
   let exercises: PracticeExerciseView[] = [];
@@ -37,9 +40,9 @@ export default async function PracticePage({
 
   try {
     if (drillSession) {
-      generated = await apiRequest<DrillSessionResponse>(`/api/practice/drills?session=${drillSession}&limit=8&round=${round}`);
+      generated = await apiRequest<DrillSessionResponse>(`/api/practice/drills?session=${drillSession}&limit=5&round=${round}`);
     } else {
-      ({ exercises } = await apiRequest<PracticeExercisesResponse>(`/api/practice/exercises?limit=10&round=${round}`));
+      ({ exercises } = await apiRequest<PracticeExercisesResponse>(`/api/practice/exercises?limit=5&round=${round}${foundation ? `&category=${foundation}` : ""}`));
     }
   } catch (error) {
     console.error("Practice backend request failed:", error);
@@ -48,43 +51,43 @@ export default async function PracticePage({
   }
 
   const itemCount = generated?.drills.length ?? exercises.length;
-  const title = drillSession === "meaning"
+  const title = foundation ? foundationTypes[foundation] : drillSession === "meaning"
     ? "Nhớ nghĩa theo cả hai chiều."
     : drillSession === "context"
       ? "Dùng từ đúng trong câu và cụm."
       : "Chấm bằng dữ liệu. Giải thích bằng quy tắc.";
-  const description = drillSession === "meaning"
+  const description = foundation ? "Mỗi lượt 5 câu. Đọc giải thích rồi chuyển sang bộ tiếp theo để luyện thêm ngữ cảnh." : drillSession === "meaning"
     ? "Luân phiên nhận diện nghĩa và tự gõ headword/cụm tiếng Anh."
     : drillSession === "context"
       ? "Điền từ trong ví dụ của core, chọn collocation và pattern đúng."
-      : "10 incomplete sentences, một đáp án chuẩn và rationale cho từng lựa chọn.";
+      : "5 câu điền khuyết, một đáp án chuẩn và rationale cho từng lựa chọn.";
 
   return (
     <div className="study-page space-y-6">
       <header className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <p className="eyebrow">Practice · {drillSession ? "Core drills" : "TOEIC-style Part 5"}{round > 0 ? ` · Vòng ${round + 1}` : ""}</p>
+          <p className="eyebrow">Practice · {foundation ? "Nền tảng" : drillSession ? "Core drills" : "TOEIC-style Part 5"}{round > 0 ? ` · Vòng ${round + 1}` : ""}</p>
           <h1 className="mt-2 text-3xl font-extrabold leading-tight tracking-[-0.015em] md:text-4xl">{title}</h1>
           <p className="muted mt-3 max-w-2xl leading-7">{description}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {round > 0 && <span className="status-pill font-bold text-[var(--primary)]">Vòng {round + 1}</span>}
           <span className="status-pill"><Layers3 className="size-3.5" />{itemCount} câu</span>
-          <span className="status-pill text-[var(--success)]"><ShieldCheck className="size-3.5" />Deterministic</span>
+          <span className="status-pill text-[var(--success)]"><ShieldCheck className="size-3.5" />Có giải thích</span>
         </div>
       </header>
 
       <nav aria-label="Loại bài luyện" className="flex flex-wrap gap-2">
         {sessionLinks.map((link) => {
-          const active = link.href.endsWith(`=${drillSession ?? "toeic_part_5"}`);
+          const active = link.href.endsWith(`=${foundation ?? drillSession ?? "toeic_part_5"}`);
           return <Link key={link.href} href={link.href} className={active ? "btn-primary" : "btn-quiet"}>{link.label}</Link>;
         })}
       </nav>
 
       {generated && generated.drills.length > 0 ? (
-        <GeneratedDrillSession drills={generated.drills} dateKey={generated.dateKey} session={generated.session} round={round} />
+        <GeneratedDrillSession key={`${drillSession}:${round}`} drills={generated.drills} dateKey={generated.dateKey} session={generated.session} round={round} />
       ) : isPart5 && exercises.length > 0 ? (
-        <PracticeSession exercises={exercises} round={round} />
+        <PracticeSession key={`${foundation ?? "part5"}:${round}`} exercises={exercises} round={round} session={foundation ?? "toeic_part_5"} />
       ) : (
         <section className="study-panel grid min-h-80 place-items-center p-8 text-center">
           <div>

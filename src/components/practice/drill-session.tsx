@@ -57,12 +57,6 @@ export function DrillSession({
   };
 
   useEffect(() => {
-    const handleAuthSuccess = () => setError("");
-    window.addEventListener("auth:success", handleAuthSuccess);
-    return () => window.removeEventListener("auth:success", handleAuthSuccess);
-  }, []);
-
-  useEffect(() => {
     if (finished || feedback) return;
     startedAtRef.current = Date.now();
     setElapsedSeconds(0);
@@ -84,6 +78,7 @@ export function DrillSession({
         body: JSON.stringify({
           session,
           dateKey,
+          round,
           drillId: current.id,
           answer,
           responseTimeMs: Date.now() - startedAtRef.current,
@@ -98,7 +93,7 @@ export function DrillSession({
       submittingRef.current = false;
       setIsChecking(false);
     }
-  }, [answer, current, dateKey, feedback, session]);
+  }, [answer, current, dateKey, feedback, session, round]);
 
   const next = useCallback(() => {
     if (!feedback) return;
@@ -255,22 +250,13 @@ export function DrillSession({
           ) : (
             <div className={`mt-6 rounded-2xl border p-5 ${feedback.correct ? "border-[var(--success)]/40 bg-[rgba(95,118,93,0.07)]" : "border-[var(--danger)]/40 bg-[rgba(141,75,75,0.07)]"}`}>
               <p className="font-extrabold">{feedback.correct ? "Đúng — tiếp tục giữ nhịp." : `Chưa đúng · đáp án: ${feedback.correctAnswer}`}</p>
-              <p className="muted mt-2 leading-7">{feedback.explanation}</p>
+              <p className="muted mt-2 whitespace-pre-line leading-7">{feedback.explanation}</p>
               <button type="button" onClick={next} className="btn-primary mt-5">{index === drills.length - 1 ? "Xem kết quả" : "Câu tiếp theo"}<ArrowRight className="size-4" /></button>
             </div>
           )}
           {error && (
             <div className="mt-4 flex items-center justify-between rounded-xl border border-[var(--danger)]/40 bg-[rgba(141,75,75,0.07)] p-3 text-sm text-[var(--danger)]">
               <span>{error}</span>
-              {(error.includes("Authentication required") || error.includes("Backend authentication") || error.includes("401")) && (
-                <button
-                  type="button"
-                  onClick={() => window.dispatchEvent(new CustomEvent("open-auth-modal"))}
-                  className="underline font-bold hover:opacity-80 cursor-pointer text-xs uppercase ml-2 shrink-0"
-                >
-                  Đăng nhập ngay
-                </button>
-              )}
             </div>
           )}
         </div>

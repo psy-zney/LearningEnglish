@@ -46,3 +46,4 @@ next-env.d.ts
 # local learning state and backups
 /dev.db
 /backups/
+/artifacts/audit/

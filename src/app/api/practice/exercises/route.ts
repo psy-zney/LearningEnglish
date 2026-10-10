@@ -1,12 +1,14 @@
+import { parseFoundationType } from "@/domain/foundation";
 import { getPracticeExercises } from "@/services/practice-service";
 
 export async function GET(request: Request) {
   try {
     const searchParams = new URL(request.url).searchParams;
-    const requested = Number(searchParams.get("limit") ?? 10);
-    const limit = Number.isFinite(requested) ? Math.min(30, Math.max(1, Math.trunc(requested))) : 10;
-    const round = Math.max(0, parseInt(searchParams.get("round") ?? "0", 10) || 0);
-    return Response.json({ exercises: await getPracticeExercises(limit, round) });
+    const category = parseFoundationType(searchParams.get("category"));
+    if (searchParams.has("category") && !category) return Response.json({ error: "Dạng bài không hợp lệ." }, { status: 400 });
+    const round = Number(searchParams.get("round") ?? 0);
+    if (!Number.isSafeInteger(round) || round < 0 || round > 1_000_000) return Response.json({ error: "Lượt học không hợp lệ." }, { status: 400 });
+    return Response.json({ exercises: await getPracticeExercises(5, round, category) });
   } catch (error) {
     console.error("Practice exercises error:", error);
     return Response.json({ error: "Không thể tải bài tập Part 5." }, { status: 500 });

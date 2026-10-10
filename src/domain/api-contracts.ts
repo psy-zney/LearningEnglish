@@ -75,7 +75,7 @@ export type PracticeExerciseView = {
   id: string;
   part: number;
   prompt: string;
-  options: ExerciseOption[];
+  options: Pick<ExerciseOption, 'id' | 'text'>[];
   difficulty: number;
 };
 

@@ -63,7 +63,7 @@ function explanationFor(item: Awaited<ReturnType<typeof getApprovedContent>>[num
   return `${answer} · ${item.meaningVi}`;
 }
 
-export async function getDrills(session: DrillSession, limit = 8, round = 0, now = new Date()) {
+export async function getDrills(session: DrillSession, limit = 5, round = 0, now = new Date()) {
   const dateKey = toLocalDateKey(now);
   const content = await getApprovedContent();
   return {
@@ -79,13 +79,15 @@ export async function answerDrill(input: {
   drillId: string;
   answer: string;
   responseTimeMs?: number;
+  round?: number;
 }, now = new Date()) {
   if (input.dateKey !== toLocalDateKey(now)) return null;
   const content = await getApprovedContent();
   const grade = gradeDailyDrill(content, {
     dateKey: input.dateKey,
     modes: getSessionModes(input.session),
-    limitPerMode: 24,
+    limitPerMode: 5,
+    round: input.round ?? 0,
     drillId: input.drillId,
     answer: input.answer,
   });

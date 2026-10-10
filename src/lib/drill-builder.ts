@@ -268,13 +268,13 @@ function buildOne(
     ({ options, correctAnswer, correctOptionId } = choice);
     acceptedAnswers = [correctAnswer];
   } else if (mode === "reverse_meaning") {
-    prompt = item.meaningVi;
+    prompt = `${item.meaningVi}\nGợi ý mục từ đang ôn: ${item.title.split(' ').map(word => `${word[0]}${'_'.repeat(Math.max(0, word.length - 1))}`).join(' ')}`;
     correctAnswer = item.title;
     acceptedAnswers = [item.title];
   } else if (mode === "fill_blank") {
     const blank = blankMaterial(item, seed);
     if (!blank) return null;
-    prompt = blank.prompt;
+    prompt = `${blank.prompt}\nĐiền đúng dạng của từ/cụm gợi ý: ${item.title}`;
     correctAnswer = blank.correctAnswer;
     source = blank.source;
     explanation = blank.explanation;
@@ -288,7 +288,7 @@ function buildOne(
   }
 
   const view: DrillView = {
-    id: makeId(dateKey, mode, item.id, prompt),
+    id: makeId(dateKey, mode, item.id, `${prompt}|round:${round}|${JSON.stringify(options ?? [])}`),
     contentId: item.id,
     mode,
     inputKind: options ? "choice" : "text",
@@ -315,8 +315,10 @@ function buildInternal(contents: readonly DrillContent[], options: DrillBuildOpt
   const output: InternalDrill[] = [];
 
   for (const mode of normalizeModes(options.modes)) {
-    const seed = round > 0 ? `${options.dateKey}:r${round}:${mode}:targets` : `${options.dateKey}:${mode}:targets`;
-    const candidates = shuffle(clean, seed);
+    const seed = `${options.dateKey}:${mode}:targets`;
+    const ordered = shuffle(clean, seed);
+    const offset = (round * limitPerMode) % Math.max(1, ordered.length);
+    const candidates = [...ordered.slice(offset), ...ordered.slice(0, offset)];
     let modeCount = 0;
     for (const item of candidates) {
       const drill = buildOne(item, clean, mode, options.dateKey, optionCount, round);
@@ -331,6 +333,26 @@ function buildInternal(contents: readonly DrillContent[], options: DrillBuildOpt
 
 export function buildDailyDrills(contents: readonly DrillContent[], options: DrillBuildOptions): DrillView[] {
   return buildInternal(contents, options).map((drill) => drill.view);
+}
+
+function explainDrill(drill: InternalDrill, contents: readonly DrillContent[], answer: string, correct: boolean) {
+  const item = contents.find(value => value.id === drill.view.contentId)!;
+  const selected = drill.view.options?.find(option => option.id === answer)?.text ?? answer;
+  const example = firstExample(item);
+  const mode = drill.view.mode;
+  const rule = mode === "meaning" || mode === "reverse_meaning"
+    ? `Nghĩa đang học: ${item.title} = ${item.meaningVi}. Nghĩa của từ hoặc cụm được xét theo ngữ cảnh, không dịch từng từ riêng lẻ.`
+    : mode === "fill_blank"
+      ? `Chỗ trống thuộc mục từ ${item.title} (${item.meaningVi}). Cần giữ đúng dạng từ xuất hiện trong câu mẫu: ${drill.correctAnswer}.`
+      : mode === "collocation"
+        ? `Cụm đang học là ${drill.correctAnswer}, gắn với ${item.title} (${item.meaningVi}). Học cả cụm để dùng từ đúng ngữ cảnh.`
+        : `Mẫu của ${item.title}: ${drill.correctAnswer}. Noun là danh từ, V là nguyên mẫu, V-ing là dạng thêm -ing; cần giữ đúng giới từ và dạng động từ trong mẫu.`;
+  const donor = contents.find(value => value.id !== item.id && valueForMode(value, mode) === selected);
+  const feedback = correct ? "Bạn đã chọn đúng đáp án của ngữ cảnh này."
+    : `Bạn chọn “${selected}”. ${donor ? `Đây là ${mode === "meaning" ? "nghĩa" : "cụm hoặc mẫu"} của ${donor.title} (${donor.meaningVi}), không phải mục từ ${item.title} đang hỏi.` : `Đáp án này chưa khớp từ hoặc dạng từ được yêu cầu. Đối chiếu “${selected}” với “${drill.correctAnswer}” và câu mẫu dưới đây.`}`;
+  return [`Đáp án: ${drill.correctAnswer}.`, rule, feedback,
+    drill.explanation ? `Câu hoàn chỉnh: ${drill.explanation}` : example ? `Ví dụ: ${example.en}${example.vi ? ` = ${example.vi}` : ""}` : "",
+  ].filter(Boolean).join("\n");
 }
 
 export function gradeDailyDrill(contents: readonly DrillContent[], input: GradeDailyDrillInput): DrillGrade {
@@ -365,6 +387,6 @@ export function gradeDailyDrill(contents: readonly DrillContent[], input: GradeD
     correctAnswer: drill.correctAnswer,
     contentId: drill.view.contentId,
     mode: drill.view.mode,
-    ...(drill.explanation ? { explanation: drill.explanation } : {}),
+    explanation: explainDrill(drill, contents, input.answer, isCorrect),
   };
 }

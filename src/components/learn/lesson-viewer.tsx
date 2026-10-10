@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { lessonRound } from "@/lib/lesson-round";
 import {
   ArrowLeft,
   ArrowRight,
@@ -46,7 +47,9 @@ interface LessonViewerProps {
 }
 
 export function LessonViewer({ lessonId, onBack, onSelectLesson }: LessonViewerProps) {
-  const lesson = getLessonById(lessonId);
+  const [round, setRound] = useState(0);
+  const sourceLesson = getLessonById(lessonId);
+  const lesson = sourceLesson ? lessonRound(sourceLesson, round) : undefined;
 
   const [activeTab, setActiveTab] = useState<"theory" | "exercises" | "words">("theory");
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
@@ -55,6 +58,7 @@ export function LessonViewer({ lessonId, onBack, onSelectLesson }: LessonViewerP
 
   // Reset state when lesson changes
   useEffect(() => {
+    setRound(0);
     setUserAnswers({});
     setSubmitted(false);
     setCompletedSaved(false);
@@ -426,11 +430,14 @@ export function LessonViewer({ lessonId, onBack, onSelectLesson }: LessonViewerP
                 >
                   <RotateCcw className="size-3.5" /> Làm lại
                 </button>
+                <button onClick={() => { handleResetExercises(); setRound(value => value + 1); }} className="btn-primary text-sm">
+                  5 câu tiếp theo
+                </button>
               </div>
             ) : (
               <button
                 onClick={handleSubmitTest}
-                disabled={answeredCount === 0}
+                disabled={totalQuestions !== 5 || answeredCount !== totalQuestions}
                 className="btn-primary text-sm font-bold px-5 py-2 disabled:opacity-50"
               >
                 Hoàn tất & Chấm điểm
@@ -506,7 +513,7 @@ function renderExercisesList(
               {readEx.questions.map((q, qIdx) => (
                 <QuestionItem
                   key={q.id}
-                  index={qIdx + 1}
+                  index={idx + qIdx + 1}
                   questionId={q.id}
                   prompt={q.question}
                   options={q.options}
@@ -638,7 +645,7 @@ interface QuestionItemProps {
   index: number;
   questionId: string;
   prompt: string;
-  options: { id: "A" | "B" | "C" | "D"; text: string }[];
+  options: { id: "A" | "B" | "C" | "D"; text: string; rationaleVi?: string }[];
   correctOptionId: "A" | "B" | "C" | "D";
   explanationVi: string;
   selectedOptionId?: string;
@@ -710,6 +717,9 @@ function QuestionItem({
               {isCorrect ? "Chính xác!" : `Chưa đúng. Đáp án chính xác là (${correctOptionId})`}
             </span>
             <p className="text-[var(--muted-1)] leading-relaxed">{explanationVi}</p>
+            {!isCorrect && selectedOptionId && (
+              <p className="mt-2 text-[var(--muted-1)] leading-relaxed">{options.find(option => option.id === selectedOptionId)?.rationaleVi}</p>
+            )}
           </div>
         </div>
       )}
